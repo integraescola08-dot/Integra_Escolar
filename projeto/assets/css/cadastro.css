@@ -1,0 +1,283 @@
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--fundo-pagina);
+  min-height:100vh;
+  color:var(--texto-principal);
+}
+
+.bg-gradient{
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at top, var(--azul-claro), transparent 55%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.bg-light{
+  position:fixed;
+  border-radius:50%;
+  filter:blur(100px);
+  opacity:.25;
+  pointer-events:none;
+  z-index:0;
+}
+
+.bg-light-1{
+  width:280px;
+  height:80px;
+  background:var(--azul-medio);
+  left:-100px;
+  top:-100px;
+}
+
+.bg-light-2{
+  width:240px;
+  height:240px;
+  background:var(--azul-escuro);
+  right:-80px;
+  bottom:-80px;
+}
+
+.page{
+  width:100%;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  padding:48px 24px;
+  position:relative;
+  z-index:1;
+}
+
+.logo-container{
+  margin-bottom:28px;
+}
+
+.logo-icon img{
+  width:220px;
+  display:block;
+}
+
+.cadastro-card{
+  width:100%;
+  max-width:900px;
+  position:relative;
+  background:var(--branco);
+  border-radius:28px;
+  box-shadow:0 20px 48px rgba(12,68,124,.10);
+}
+
+.card-border{
+  position:absolute;
+  inset:0;
+  border-radius:28px;
+  border:1.5px solid rgba(26,86,160,.25);
+  pointer-events:none;
+}
+
+.card-content{
+  padding:48px 60px 56px;
+}
+
+.login-title{
+  text-align:center;
+  font-size:34px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:var(--azul-principal);
+}
+
+.subtitle{
+  text-align:center;
+  margin-top:10px;
+  margin-bottom:40px;
+  font-size:14px;
+  color:var(--texto-secundario);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  column-gap:36px;
+}
+
+.coluna{
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+}
+
+.divisoria{
+  width:1px;
+  background:rgba(26,86,160,.18);
+}
+
+.input-group{
+  display:flex;
+  flex-direction:column;
+}
+
+.input-group label{
+  margin-bottom:8px;
+  font-size:13.5px;
+  font-weight:700;
+  color:var(--azul-principal);
+}
+
+.input-wrapper{
+  height:48px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  background:var(--azul-claro);
+  border:1.5px solid rgba(26,86,160,.20);
+  border-radius:14px;
+  transition:border-color .2s, box-shadow .2s;
+}
+
+.input-wrapper:focus-within{
+  border-color:var(--azul-principal);
+  box-shadow:0 0 0 4px rgba(26,86,160,.12);
+}
+
+.input-icon{
+  width:17px;
+  height:17px;
+  color:var(--azul-medio);
+  margin-right:10px;
+  flex-shrink:0;
+}
+
+.input-wrapper input{
+  width:100%;
+  height:100%;
+  border:none;
+  outline:none;
+  background:none;
+  font-family:inherit;
+  font-size:14px;
+  color:var(--texto-principal);
+}
+
+.input-wrapper input::placeholder{
+  color:var(--texto-secundario);
+}
+
+.toggle-password{
+  background:none;
+  border:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  opacity:.65;
+  transition:opacity .2s;
+}
+
+.toggle-password:hover{
+  opacity:1;
+}
+
+.toggle-password img{
+  width:17px;
+}
+
+.login-button{
+  margin:44px auto 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  width:100%;
+  max-width:340px;
+  height:58px;
+  border:none;
+  border-radius:16px;
+  background:var(--azul-escuro);
+  color:var(--branco);
+  font-family:inherit;
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.03em;
+  cursor:pointer;
+  box-shadow:0 14px 28px rgba(12,68,124,.30);
+  transition:background .2s, transform .2s;
+}
+
+.login-button:hover{
+  background:#083863;
+  transform:translateY(-2px);
+}
+
+.login-button svg{
+  width:18px;
+  height:18px;
+}
+
+@media(max-width:720px){
+
+  .grid{
+    grid-template-columns:1fr;
+    row-gap:22px;
+  }
+
+  .divisoria{
+    display:none;
+  }
+
+  .card-content{
+    padding:36px 28px;
+  }
+
+  .login-button{
+    max-width:100%;
+  }
+
+  .logo-icon img{
+    width:170px;
+  }
+}
+
+.mensagem-cadastro {
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  display: none;
+}
+
+.mensagem-cadastro.erro {
+  display: block;
+  color: var(--vermelho);
+  background: var(--vermelho-claro);
+}
+
+.mensagem-cadastro.sucesso {
+  display: block;
+  color: var(--verde);
+  background: var(--verde-claro);
+}
+
+.voltar-login {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
+.voltar-login a {
+  color: var(--azul-principal);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.voltar-login a:hover {
+  text-decoration: underline;
+}

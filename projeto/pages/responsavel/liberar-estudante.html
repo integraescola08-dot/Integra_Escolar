@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integra Escolar | Liberar Estudante</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/liberar-estudante.css">
+</head>
+<body>
+
+  <!-- ── Header padrão ── -->
+  <header>
+    <button class="btn-voltar" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div class="logo">
+      <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
+    </div>
+    <div class="top-content">
+      <div class="user">
+        <i class="fa-regular fa-user"></i>
+        <span>Responsável</span>
+      </div>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item" onclick="ir('home.html?painel=meus-estudantes', null, 'voltar')"><i class="fa-solid fa-people-roof"></i><span>Meus Estudantes</span></div>
+      <div class="menu-item" onclick="ir('home.html?painel=contato-ajuda', null, 'voltar')"><i class="fa-regular fa-circle-question"></i><span>Contato e Ajuda</span></div>
+      <div class="menu-item" onclick="ir('home.html?painel=sobre', null, 'voltar')"><img src="../../assets/img/casa-simbolo.png" class="menu-icon-casa" alt=""><span>Sobre o Integra Escolar</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <p class="page-title">
+      <i class="fa-regular fa-user"></i>
+      Liberar Estudante
+    </p>
+
+    <form id="formLiberacao">
+
+      <div class="campo">
+        <label for="estudante">Estudante <span>*</span></label>
+        <select id="estudante" required>
+          <option value="">Selecione o estudante</option>
+          <option>João Silva</option>
+          <option>Maria Oliveira</option>
+          <option>Pedro Santos</option>
+        </select>
+      </div>
+
+      <div class="linha">
+        <div class="campo">
+          <label for="dataLiberacao">Data da Liberação <span>*</span></label>
+          <input type="date" id="dataLiberacao" required>
+        </div>
+
+        <div class="campo">
+          <label for="horaLiberacao">Horário de Saída <span>*</span></label>
+          <input type="time" id="horaLiberacao" required>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="motivo">Motivo da Liberação <span>*</span></label>
+        <select id="motivo" required>
+          <option value="">Selecione o motivo</option>
+          <option>Consulta Médica</option>
+          <option>Compromisso Familiar</option>
+          <option>Emergência</option>
+          <option>Outro</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label for="observacoes">Observações Adicionais (Opcional)</label>
+        <textarea id="observacoes" placeholder="Adicione informações adicionais sobre a liberação..."></textarea>
+      </div>
+
+      <div class="info-box">
+        <i class="fa-solid fa-circle-info"></i>
+        <p>
+          <strong>Informação Importante</strong><br>
+          A liberação será enviada para aprovação da escola.
+          Você receberá uma notificação quando for processada.
+        </p>
+      </div>
+
+      <div class="buttons">
+        <button type="button" class="cancel-btn" onclick="cancelarSolicitacao()">
+          Cancelar
+        </button>
+        <button type="submit" class="submit-btn">
+          <i class="fa-solid fa-paper-plane"></i>
+          Solicitar Liberação
+        </button>
+      </div>
+
+    </form>
+
+  </main>
+
+  <script src="../../assets/js/api.js"></script>
+  <script src="../../assets/js/header.js"></script>
+  <script src="../../assets/js/liberar-estudante.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, var(--azul-claro) 0%, var(--branco) 100%);
+  min-height: 100vh;
+  color: var(--texto-principal);
+}
+
+:root {
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,.10);
+}
+
+.page { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 18px; }
+
+.card {
+  background: var(--branco);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--azul-claro);
+  overflow: hidden;
+}
+
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(135deg, var(--azul-medio), var(--azul-principal), var(--azul-escuro));
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--branco);
+}
+.hero-icone {
+  width: 72px; height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px;
+}
+.hero-icone img { width: 100%; height: 100%; object-fit: contain; }
+.hero h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+.hero p { font-size: .9rem; opacity: .92; max-width: 480px; margin: 0 auto; line-height: 1.5; }
+.hero .versao {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: .72rem;
+  font-weight: 600;
+  background: rgba(255,255,255,.18);
+  padding: 4px 12px;
+  border-radius: 99px;
+}
+
+/* ── Conteúdo genérico ── */
+.card-body { padding: 24px; }
+.card-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; color: var(--texto-principal); }
+.card-title svg { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; stroke: var(--azul-principal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ── Passos "como funciona" ── */
+.passos { display: flex; flex-direction: column; gap: 14px; }
+.passo { display: flex; gap: 14px; align-items: flex-start; }
+.passo-num {
+  width: 30px; height: 30px; flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--azul-claro);
+  color: var(--azul-escuro);
+  font-weight: 700; font-size: .85rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.passo-texto h3 { font-size: .9rem; font-weight: 600; margin-bottom: 2px; }
+.passo-texto p { font-size: .82rem; color: var(--texto-secundario); line-height: 1.5; }
+
+/* ── Lista de funcionalidades ── */
+.funcionalidades { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.funcionalidade {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: .85rem;
+  color: var(--texto-principal);
+}
+.funcionalidade svg { width: 16px; height: 16px; stroke: var(--verde); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* ── Créditos ── */
+.creditos { text-align: center; padding: 20px 24px 26px; }
+.creditos p { font-size: .8rem; color: var(--texto-secundario); line-height: 1.6; }
+.creditos strong { color: var(--texto-principal); }

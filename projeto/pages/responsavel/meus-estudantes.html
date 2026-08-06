@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meus Estudantes — Integra Escolar</title>
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/meus-estudantes.css">
+</head>
+<body>
+<div class="page">
+  <div class="card">
+
+    <!-- Cabeçalho -->
+    <div class="card-header">
+      <div class="card-header-top">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <h2>Meus Estudantes</h2>
+      </div>
+      <p class="card-header-sub">Estudantes vinculados à sua conta de responsável</p>
+    </div>
+
+    <!-- Lista -->
+    <div class="lista-estudantes" id="lista">
+      <div class="status-msg" id="carregando">
+        <p>Carregando estudantes...</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script src="../../assets/js/api.js"></script>
+<script src="../../assets/js/meus-estudantes.js"></script>
+</body>
+</html>

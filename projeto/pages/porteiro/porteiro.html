@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integra Escolar | Porteiro</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/porteiro.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
+    </div>
+    <div class="top-content">
+      <div class="user">
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Porteiro</span>
+      </div>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item"><i class="fa-solid fa-house"></i><span>Início</span></div>
+      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Perfil</span></div>
+      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Título + contador -->
+    <div class="titulo">
+      <div class="titulo-texto">
+        <h1><i class="fa-solid fa-door-open"></i> Alunos Liberados</h1>
+        <p>Lista de alunos autorizados pela gestão para saída antecipada.</p>
+      </div>
+      <div class="contador-badge">
+        <span id="totalLiberados">3</span>
+        <small>aguardando saída</small>
+      </div>
+    </div>
+
+    <!-- Aviso -->
+    <div class="aviso-info">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>Estas liberações foram aprovadas pela gestão escolar. O porteiro deve registrar a saída confirmando a identidade de quem busca o aluno.</span>
+    </div>
+
+    <!-- Lista -->
+    <div class="lista-alunos" id="listaAlunos">
+
+      <!-- CARD 1 — aguardando -->
+      <div class="card-aluno" data-status="aguardando">
+        <div class="card-topo">
+          <div class="status-tag tag-aguardando">
+            <i class="fa-regular fa-clock"></i> Aguardando saída
+          </div>
+          <div class="hora-aprovacao">Aprovado às 10:45</div>
+        </div>
+
+        <div class="card-corpo">
+          <div class="aluno-info">
+            <div class="avatar"><i class="fa-regular fa-user"></i></div>
+            <div>
+              <h2>Maria Miranda Almeida</h2>
+              <div class="detalhes">
+                <span><i class="fa-solid fa-users"></i> 3º MKT B</span>
+                <span><i class="fa-regular fa-clock"></i> Saída: 11:30</span>
+                <span><i class="fa-solid fa-stethoscope"></i> Consulta Médica</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quem-busca">
+            <i class="fa-regular fa-user"></i>
+            <div>
+              <small>Quem irá buscar</small>
+              <strong>Motorista de aplicativo</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-acoes">
+          <button class="btn-confirmar-saida" onclick="confirmarSaida(this)">
+            <i class="fa-solid fa-check"></i> Confirmar Saída
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 2 — aguardando -->
+      <div class="card-aluno" data-status="aguardando">
+        <div class="card-topo">
+          <div class="status-tag tag-aguardando">
+            <i class="fa-regular fa-clock"></i> Aguardando saída
+          </div>
+          <div class="hora-aprovacao">Aprovado às 13:10</div>
+        </div>
+
+        <div class="card-corpo">
+          <div class="aluno-info">
+            <div class="avatar"><i class="fa-regular fa-user"></i></div>
+            <div>
+              <h2>Luiz Heleno Neto Serafim da Silva</h2>
+              <div class="detalhes">
+                <span><i class="fa-solid fa-users"></i> 3º TDS A</span>
+                <span><i class="fa-regular fa-clock"></i> Saída: 15:00</span>
+                <span><i class="fa-solid fa-house"></i> Compromisso Familiar</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quem-busca">
+            <i class="fa-regular fa-user"></i>
+            <div>
+              <small>Quem irá buscar</small>
+              <strong>Responsável</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-acoes">
+          <button class="btn-confirmar-saida" onclick="confirmarSaida(this)">
+            <i class="fa-solid fa-check"></i> Confirmar Saída
+          </button>
+        </div>
+      </div>
+
+      <!-- CARD 3 — saída confirmada -->
+      <div class="card-aluno" data-status="saiu">
+        <div class="card-topo">
+          <div class="status-tag tag-saiu">
+            <i class="fa-solid fa-circle-check"></i> Saída confirmada
+          </div>
+          <div class="hora-aprovacao">Saiu às 08:55</div>
+        </div>
+
+        <div class="card-corpo">
+          <div class="aluno-info">
+            <div class="avatar avatar-saiu"><i class="fa-regular fa-user"></i></div>
+            <div>
+              <h2>Clara da Silva</h2>
+              <div class="detalhes">
+                <span><i class="fa-solid fa-users"></i> 1º MKT A</span>
+                <span><i class="fa-regular fa-clock"></i> Saída: 08:40</span>
+                <span><i class="fa-solid fa-triangle-exclamation"></i> Emergência</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quem-busca">
+            <i class="fa-regular fa-user"></i>
+            <div>
+              <small>Quem irá buscar</small>
+              <strong>Parente do aluno</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Estado vazio -->
+    <div class="sem-registros" id="semRegistros">
+      <i class="fa-solid fa-circle-check"></i>
+      <p>Nenhum aluno aguardando saída no momento.</p>
+    </div>
+
+  </main>
+
+  <!-- POPUP de confirmação de saída -->
+  <div class="modal-overlay" id="modalConfirmar">
+    <div class="modal">
+      <div class="modal-header">
+        <i class="fa-solid fa-circle-check"></i>
+        <h2>Confirmar Saída</h2>
+      </div>
+      <div class="modal-body">
+        <p id="textoConfirmar"></p>
+        <div class="modal-buttons">
+          <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+          <button class="btn-ok" onclick="executarConfirmacao()">
+            <i class="fa-solid fa-check"></i> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../assets/js/api.js"></script>
+  <script src="../../assets/js/header.js"></script>
+  <script src="../../assets/js/porteiro.js"></script>
+</body>
+</html>

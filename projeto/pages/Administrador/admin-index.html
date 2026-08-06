@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integra Escolar | Administração</title>
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/admin.css">
+</head>
+<body>
+
+<header>
+  <div class="titulo">
+    <strong>Integra Escolar</strong>
+    <span>Administração</span>
+  </div>
+  <button id="logout">Sair</button>
+</header>
+
+<main>
+  <section class="hero">
+    <h1 id="saudacao">Painel do administrador</h1>
+    <p>Cadastre a estrutura oficial da escola e os usuários autorizados.</p>
+  </section>
+
+  <section class="cards">
+    <article><b id="n-alunos">0</b><span>Alunos</span></article>
+    <article><b id="n-professores">0</b><span>Professores</span></article>
+    <article><b id="n-coordenadores">0</b><span>Coordenadores</span></article>
+    <article><b id="n-turmas">0</b><span>Turmas</span></article>
+  </section>
+
+  <nav class="tabs">
+    <button data-tab="turmas" class="ativo">Turmas</button>
+    <button data-tab="alunos">Alunos</button>
+    <button data-tab="professores">Professores</button>
+    <button data-tab="coordenadores">Coordenadores</button>
+  </nav>
+
+  <section id="turmas" class="painel ativo">
+    <h2>Cadastrar turma</h2>
+    <form id="form-turma">
+      <input name="codigo" placeholder="Código: 3TDSA" maxlength="10" required>
+      <input name="descricao" placeholder="Descrição" required>
+      <button>Cadastrar</button>
+    </form>
+    <div id="lista-turmas" class="lista"></div>
+  </section>
+
+  <section id="alunos" class="painel">
+    <h2>Cadastrar aluno</h2>
+    <form id="form-aluno">
+      <input name="matricula" placeholder="Matrícula (opcional)">
+      <input name="nome" placeholder="Nome completo" required>
+      <select name="turma" required>
+        <option value="">Selecione a turma</option>
+      </select>
+      <button>Cadastrar</button>
+    </form>
+    <div id="lista-alunos" class="lista"></div>
+  </section>
+
+  <section id="professores" class="painel">
+    <h2>Cadastrar professor</h2>
+    <form id="form-professor">
+      <input name="nome" placeholder="Nome completo" required>
+      <input name="email" type="email" placeholder="Email" required>
+      <input name="telefone" placeholder="Telefone">
+      <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
+      <button>Cadastrar</button>
+    </form>
+    <div id="lista-professores" class="lista"></div>
+  </section>
+
+  <section id="coordenadores" class="painel">
+    <h2>Cadastrar coordenador(a)</h2>
+    <form id="form-coordenador">
+      <input name="nome" placeholder="Nome completo" required>
+      <input name="email" type="email" placeholder="Email" required>
+      <input name="telefone" placeholder="Telefone">
+      <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
+      <button>Cadastrar</button>
+    </form>
+    <div id="lista-coordenadores" class="lista"></div>
+  </section>
+
+  <div id="mensagem" role="status"></div>
+</main>
+
+<script src="../../assets/js/api.js"></script>
+<script src="../../assets/js/header.js"></script>
+<script src="../../assets/js/admin.js"></script>
+</body>
+</html>

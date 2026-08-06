@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histórico — Integra Escolar</title>
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/historico.css">
+</head>
+<body>
+<div class="page">
+  <div class="card">
+
+    <!-- Cabeçalho -->
+    <div class="card-header">
+      <div class="card-header-top">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <h2>Histórico</h2>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('atestados', this)">Atestados</button>
+        <button class="tab-btn"        onclick="switchTab('liberacoes', this)">Liberações</button>
+      </div>
+    </div>
+
+    <!-- Busca e filtros -->
+    <div class="search-bar">
+      <div class="periodo-chips">
+        <button class="chip active" data-periodo="todos" onclick="setPeriodo('todos', this)">Todos</button>
+        <button class="chip" data-periodo="hoje" onclick="setPeriodo('hoje', this)">Hoje</button>
+        <button class="chip" data-periodo="7dias" onclick="setPeriodo('7dias', this)">Últimos 7 dias</button>
+        <button class="chip" data-periodo="mes" onclick="setPeriodo('mes', this)">Este mês</button>
+      </div>
+      <div class="search-row">
+        <div class="data-field">
+          <label for="filtro-de">De</label>
+          <input type="date" id="filtro-de" onchange="onDataManualAlterada()" />
+        </div>
+        <div class="data-field">
+          <label for="filtro-ate">Até</label>
+          <input type="date" id="filtro-ate" onchange="onDataManualAlterada()" />
+        </div>
+        <select class="filter-select" id="filtro-status" onchange="render()">
+          <option value="">Todos os status</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="pendente">Pendente</option>
+          <option value="rejeitado">Rejeitado</option>
+        </select>
+      </div>
+      <p class="result-count" id="result-count"></p>
+    </div>
+
+    <!-- Lista -->
+    <div class="list" id="list">
+      <p class="result-count" id="carregando">Carregando histórico...</p>
+    </div>
+
+  </div>
+</div>
+<script src="../../assets/js/api.js"></script>
+<script src="../../assets/js/historico.js"></script>
+</body>
+</html>

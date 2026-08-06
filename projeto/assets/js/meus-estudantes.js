@@ -1,0 +1,93 @@
+/* Integra Escolar — Meus Estudantes
+   Roda dentro de um <iframe> em home.html (ver assets/js/header.js).
+   Recebe o usuário logado via postMessage e busca os alunos vinculados
+   a ele na API real (GET /api/alunos?id_responsavel=...). */
+
+window.addEventListener('message', function (e) {
+  if (e.data && e.data.tipo === 'integra:usuario') {
+    carregarEstudantes(e.data.usuario, e.data.apiUrl);
+  }
+});
+
+if (window.parent && window.parent !== window) {
+  window.parent.postMessage({ tipo: 'integra:pedir-usuario' }, window.location.origin);
+}
+
+function getIniciais(nome) {
+  return (nome || '')
+    .trim()
+    .split(' ')
+    .map(n => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+async function carregarEstudantes(usuario, apiUrl) {
+  const lista = document.getElementById('lista');
+  if (!usuario || !usuario.pessoa || !apiUrl) return;
+
+  try {
+    const resposta = await apiFetch(`${apiUrl}/alunos?id_responsavel=${usuario.pessoa.id}`);
+    const alunos = await resposta.json();
+    renderizar(alunos);
+  } catch (erro) {
+    lista.innerHTML = `
+      <div class="status-msg">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p>Não foi possível carregar seus estudantes agora.</p>
+      </div>`;
+    console.error('Erro ao carregar estudantes:', erro);
+  }
+}
+
+function renderizar(alunos) {
+  const lista = document.getElementById('lista');
+
+  if (!alunos || alunos.length === 0) {
+    lista.innerHTML = `
+      <div class="status-msg">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <p>Nenhum estudante vinculado à sua conta ainda.</p>
+      </div>`;
+    return;
+  }
+
+  lista.innerHTML = alunos.map(aluno => {
+    const turmaLabel = aluno.descricao ? `Turma ${aluno.turma} — ${aluno.descricao}` : `Turma ${aluno.turma}`;
+    return `
+      <div class="aluno-card">
+        <div class="aluno-top">
+          <div class="aluno-avatar">${getIniciais(aluno.nome)}</div>
+          <div class="aluno-info">
+            <div class="aluno-nome" title="${aluno.nome}">${aluno.nome}</div>
+            <div class="aluno-turma">${turmaLabel}</div>
+          </div>
+        </div>
+        <span class="aluno-chip">Matrícula ${aluno.matricula}</span>
+        <div class="aluno-acoes">
+          <button class="btn-acao primario" onclick="irParaPainel('liberar-estudante.html', ${aluno.matricula})">
+            <svg viewBox="0 0 24 24"><path d="M18 8L22 12L18 16"/><path d="M2 12H22"/></svg>
+            Liberar este estudante
+          </button>
+          <button class="btn-acao secundario" onclick="irParaPainel('enviar-atestado.html', ${aluno.matricula})">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Enviar atestado
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Esta página vive num iframe — para navegar para uma tela cheia (fora da
+// esteira), a navegação precisa "escapar" para a janela pai, reaproveitando
+// a função ir() dela (mesma animação de transição já usada no resto do app).
+function irParaPainel(pagina, matricula) {
+  const destino = `${pagina}?matricula=${matricula}`;
+  if (window.parent && typeof window.parent.ir === 'function') {
+    window.parent.ir(destino, null, 'avancar');
+  } else {
+    window.location.href = destino;
+  }
+}

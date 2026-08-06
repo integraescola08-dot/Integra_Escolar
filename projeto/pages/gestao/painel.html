@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integra Escolar | Gestão</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/gestao.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
+    </div>
+    <div class="top-content">
+      <div class="user">
+        <i class="fa-solid fa-users-gear"></i>
+        <span>Gestão</span>
+      </div>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Meu Perfil</span></div>
+      <div class="menu-item"><i class="fa-regular fa-clock"></i><span>Histórico</span></div>
+      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="painel">
+
+      <div class="topo-painel">
+        <h1><i class="fa-solid fa-users-gear"></i> Painel da Gestão</h1>
+        <p>Analise e decida sobre atestados e solicitações de liberação dos responsáveis.</p>
+
+        <div class="cards">
+          <div class="card">
+            <small>Atestados pendentes</small>
+            <h2 id="contador-atestados">1</h2>
+          </div>
+          <div class="card">
+            <small>Liberações pendentes</small>
+            <h2 id="contador-liberacoes">1</h2>
+          </div>
+        </div>
+
+        <!-- Barra de pesquisa -->
+        <div class="barra-pesquisa">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="pesquisa" placeholder="Pesquisar aluno...">
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros">
+          <select id="turma">
+            <option value="">Turma</option>
+            <option>1º MKT A</option><option>1º MKT B</option>
+            <option>1º TDS A</option><option>1º TDS B</option>
+            <option>2º MKT A</option><option>2º MKT B</option>
+            <option>2º TDS A</option><option>2º TDS B</option>
+            <option>3º MKT A</option><option>3º MKT B</option>
+            <option>3º TDS A</option><option>3º TDS B</option>
+          </select>
+          <select id="status">
+            <option value="todos">Todos</option>
+            <option value="pendente">Pendentes</option>
+            <option value="aprovado">Aprovados</option>
+            <option value="rejeitado">Rejeitados</option>
+          </select>
+          <div class="campo-data">
+            <input type="date" id="dataFiltro">
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active" onclick="trocar('atestados', this)">
+            <i class="fa-regular fa-file-lines"></i>
+            Atestados <span class="badge" id="badge-atestados">1</span>
+          </button>
+          <button class="tab" onclick="trocar('liberacoes', this)">
+            <i class="fa-solid fa-user-check"></i>
+            Liberações <span class="badge" id="badge-liberacoes">1</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="conteudo">
+
+        <!-- ABA: ATESTADOS -->
+        <div id="atestados">
+
+          <!-- Pendentes -->
+          <div id="lista-atestados">
+            <div class="item" data-turma="3º TDS A" data-status="pendente" data-nome="Camilla Rayssa" id="atestado-camilla">
+              <div class="item-topo">
+                <div class="aluno">
+                  <div class="icone amarelo"><i class="fa-regular fa-file-lines"></i></div>
+                  <div>
+                    <div class="nome">Camilla Rayssa</div>
+                    <div class="sub">Atestado Odontológico — 3º TDS A</div>
+                    <div class="data"><i class="fa-regular fa-calendar"></i> 08/05/2026</div>
+                  </div>
+                </div>
+                <div class="status pendente" id="status-camilla">
+                  <i class="fa-regular fa-clock"></i> Pendente
+                </div>
+              </div>
+              <div class="arquivo"><i class="fa-regular fa-file-pdf"></i> atestado-camilla-08-05.pdf</div>
+              <div class="obs">"Tratamento ortodôntico"</div>
+              <button class="btn-analisar" id="btn-camilla" onclick="abrirModal('camilla')">
+                <i class="fa-regular fa-message"></i> Analisar e Decidir
+              </button>
+            </div>
+          </div>
+
+          <!-- Histórico de atestados -->
+          <div class="secao-historico" id="historico-atestados">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Histórico</h3>
+            <div id="lista-historico-atestados">
+              <div class="item historico" data-turma="3º TDS B" data-status="aprovado" data-nome="Lucas Gabriel">
+                <div class="item-topo">
+                  <div class="aluno">
+                    <div class="icone verde"><i class="fa-regular fa-file-lines"></i></div>
+                    <div>
+                      <div class="nome">Lucas Gabriel</div>
+                      <div class="sub">Atestado Médico — 3º TDS B</div>
+                      <div class="data"><i class="fa-regular fa-calendar"></i> 10/05/2026</div>
+                    </div>
+                  </div>
+                  <div class="status aprovado">✓ Aprovado</div>
+                </div>
+                <div class="arquivo"><i class="fa-regular fa-file-pdf"></i> atestado-lucas-10-05.pdf</div>
+                <div class="obs">"Consulta médica de rotina"</div>
+                <div class="mensagem">
+                  <strong>Resposta — 11/05/2026</strong><br><br>
+                  Documento válido e dentro do prazo. Falta justificada.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ABA: LIBERAÇÕES -->
+        <div id="liberacoes" class="hidden">
+
+          <!-- Pendentes -->
+          <div id="lista-liberacoes">
+            <div class="item" data-turma="3º MKT B" data-status="pendente" data-nome="Maria Miranda" id="liberacao-maria">
+              <div class="item-topo">
+                <div class="aluno">
+                  <div class="icone amarelo"><i class="fa-solid fa-user-check"></i></div>
+                  <div>
+                    <div class="nome">Maria Miranda Almeida</div>
+                    <div class="sub">Liberação de saída — 3º MKT B</div>
+                    <div class="data"><i class="fa-regular fa-calendar"></i> 15/06/2026 &nbsp;•&nbsp; <i class="fa-regular fa-clock"></i> 11:30</div>
+                  </div>
+                </div>
+                <div class="status pendente" id="status-liberacao-maria">
+                  <i class="fa-regular fa-clock"></i> Pendente
+                </div>
+              </div>
+              <div class="obs">"Consulta médica"</div>
+              <div class="quem-busca-info">
+                <i class="fa-regular fa-user"></i> Quem irá buscar: <strong>Motorista de aplicativo</strong>
+              </div>
+              <button class="btn-analisar" id="btn-liberacao-maria" onclick="abrirModalLiberacao('maria')">
+                <i class="fa-regular fa-message"></i> Analisar e Decidir
+              </button>
+            </div>
+          </div>
+
+          <!-- Histórico de liberações -->
+          <div class="secao-historico" id="historico-liberacoes">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Histórico</h3>
+            <div id="lista-historico-liberacoes"></div>
+            <p class="sem-historico" style="color:var(--texto-secundario);font-size:14px;padding:10px 0;">
+              Nenhuma liberação no histórico ainda.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal analisar atestado -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-topo">
+        <div><h3>Analisar Atestado</h3><span id="modal-nome-atestado"></span></div>
+        <button class="fechar" onclick="fecharModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-corpo">
+        <label>Decisão *</label>
+        <div class="opcoes">
+          <button class="opcao aprovar"  onclick="selecionarDecisao(this)"><i class="fa-regular fa-circle-check"></i> Aprovar</button>
+          <button class="opcao rejeitar" onclick="selecionarDecisao(this)"><i class="fa-regular fa-circle-xmark"></i> Rejeitar</button>
+        </div>
+        <label>Resposta da gestão (Opcional)</label>
+        <textarea id="respostaAtestado" placeholder="Digite sua resposta..."></textarea>
+        <div class="acoes">
+          <button class="cancelar" onclick="fecharModal()">Cancelar</button>
+          <button class="confirmar" onclick="confirmarDecisaoAtestado()">Confirmar e Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal analisar liberação -->
+  <div class="modal-overlay" id="modalLiberacao">
+    <div class="modal">
+      <div class="modal-topo">
+        <div><h3>Analisar Liberação</h3><span id="modal-nome-liberacao"></span></div>
+        <button class="fechar" onclick="fecharModalLiberacao()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-corpo">
+        <label>Decisão *</label>
+        <div class="opcoes">
+          <button class="opcao aprovar"  onclick="selecionarDecisaoLib(this)"><i class="fa-regular fa-circle-check"></i> Aprovar</button>
+          <button class="opcao rejeitar" onclick="selecionarDecisaoLib(this)"><i class="fa-regular fa-circle-xmark"></i> Rejeitar</button>
+        </div>
+        <label>Resposta da gestão (Opcional)</label>
+        <textarea id="respostaLiberacao" placeholder="Digite sua resposta..."></textarea>
+        <div class="acoes">
+          <button class="cancelar" onclick="fecharModalLiberacao()">Cancelar</button>
+          <button class="confirmar" onclick="confirmarDecisaoLiberacao()">Confirmar e Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../assets/js/api.js"></script>
+  <script src="../../assets/js/header.js"></script>
+  <script src="../../assets/js/gestao.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, var(--azul-claro) 0%, var(--branco) 100%);
+  min-height: 100vh;
+  color: var(--texto-principal);
+}
+
+:root {
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,.10);
+}
+
+/* ── Layout ── */
+.page { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+
+/* ── Card principal ── */
+.card {
+  background: var(--branco);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--azul-claro);
+  overflow: hidden;
+}
+
+/* ── Cabeçalho ── */
+.card-header {
+  background: linear-gradient(90deg, var(--azul-medio), var(--azul-principal));
+  padding: 24px;
+}
+.card-header-top { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.card-header-top h2 { font-size: 1.4rem; font-weight: 600; color: var(--branco); }
+.card-header-sub { font-size: .85rem; color: var(--azul-claro); padding-left: 42px; }
+
+/* ── Lista de estudantes ── */
+.lista-estudantes {
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.aluno-card {
+  border: 1px solid var(--borda);
+  border-radius: var(--radius);
+  padding: 18px;
+  background: var(--branco);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow .15s, transform .15s;
+}
+.aluno-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.08); transform: translateY(-1px); }
+
+.aluno-top { display: flex; align-items: center; gap: 12px; }
+
+.aluno-avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--azul-medio), var(--azul-principal));
+  color: var(--branco);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .95rem;
+  flex-shrink: 0;
+}
+
+.aluno-info { min-width: 0; }
+.aluno-nome {
+  font-size: 1rem; font-weight: 600; color: var(--texto-principal);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.aluno-turma { font-size: .8rem; color: var(--texto-secundario); margin-top: 2px; }
+
+.aluno-chip {
+  align-self: flex-start;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--azul-escuro);
+  background: var(--azul-claro);
+  border-radius: 99px;
+  padding: 3px 10px;
+}
+
+.aluno-acoes { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+
+.btn-acao {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: filter .15s, background .15s;
+  text-decoration: none;
+  font-family: inherit;
+}
+.btn-acao svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+.btn-acao.primario {
+  background: var(--azul-principal);
+  color: var(--branco);
+}
+.btn-acao.primario:hover { filter: brightness(1.08); }
+
+.btn-acao.secundario {
+  background: var(--fundo-pagina);
+  color: var(--texto-principal);
+  border-color: var(--borda);
+}
+.btn-acao.secundario:hover { background: var(--azul-claro); }
+
+/* ── Estados de carregamento / vazio / erro ── */
+.status-msg { text-align: center; padding: 56px 24px; grid-column: 1 / -1; }
+.status-msg svg { width: 56px; height: 56px; stroke: var(--borda); stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; margin: 0 auto 14px; display: block; }
+.status-msg p { color: var(--texto-secundario); font-size: .9rem; }
+
+/* ── Responsivo ── */
+@media (max-width: 480px) {
+  .lista-estudantes { grid-template-columns: 1fr; padding: 18px 16px; }
+  .card-header-sub { padding-left: 0; margin-top: 6px; }
+}

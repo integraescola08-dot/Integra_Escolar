@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integra Escolar | Responsável</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/responsavel.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
+    </div>
+    <div class="top-content">
+      <div class="user">
+        <i class="fa-regular fa-user"></i>
+        <span>Responsável</span>
+      </div>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item" onclick="irPainel('meus-estudantes')"><i class="fa-solid fa-people-roof"></i><span>Meus Estudantes</span></div>
+      <div class="menu-item" onclick="irPainel('contato-ajuda')"><i class="fa-regular fa-circle-question"></i><span>Contato e Ajuda</span></div>
+      <div class="menu-item" onclick="irPainel('sobre')"><img src="../../assets/img/casa-simbolo.png" class="menu-icon-casa" alt=""><span>Sobre o Integra Escolar</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
+    <nav class="quick-menu">
+
+        <a href="#" class="quick-item active" data-panel="home" onclick="irPainel('home',this); return false;">
+            <i class="fa-solid fa-house"></i>
+            <span>Tela Inicial</span>
+        </a>
+
+        <a href="#" class="quick-item" data-panel="historico" onclick="irPainel('historico',this); return false;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Histórico</span>
+        </a>
+
+        <a href="#" class="quick-item" data-panel="configuracoes" onclick="irPainel('configuracoes',this); return false;">
+            <i class="fa-solid fa-gear"></i>
+            <span>Configurações</span>
+        </a>
+
+    </nav>
+  </header>
+
+  <div class="slide-viewport">
+    <div class="slide-track" id="slideTrack" data-active="home">
+
+      <!-- Painel 1: Tela Inicial -->
+      <section class="slide-panel" data-panel="home">
+        <main class="container">
+          <section class="main-card">
+            <h1>Selecione uma Opção</h1>
+            <div class="options">
+              <div class="option-card" onclick="ir('enviar-atestado.html')">
+                <div class="icon-circle"><i class="fa-regular fa-file-lines"></i></div>
+                <h2>Enviar Atestado</h2>
+                <p>Envie atestados médicos ou documentos de justificativa</p>
+              </div>
+              <div class="option-card" onclick="ir('liberar-estudante.html')">
+                <div class="icon-circle"><i class="fa-regular fa-user"></i></div>
+                <h2>Liberar Estudante</h2>
+                <p>Autorize a saída antecipada do estudante</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="info-box">
+            <h3>Informações Importantes</h3>
+            <ul>
+              <li>Atestados devem ser enviados em formato PDF ou imagem (JPG, PNG)</li>
+              <li>A liberação do estudante requer confirmação da escola</li>
+              <li>Todas as ações ficam registradas no histórico</li>
+            </ul>
+          </section>
+        </main>
+      </section>
+
+      <!-- Painel 2: Histórico (tela já pronta, isolada em iframe) -->
+      <section class="slide-panel" data-panel="historico">
+        <iframe class="panel-iframe" id="frameHistorico" title="Histórico"></iframe>
+      </section>
+
+      <!-- Painel 3: Configurações (tela já pronta, isolada em iframe) -->
+      <section class="slide-panel" data-panel="configuracoes">
+        <iframe class="panel-iframe" id="frameConfiguracoes" title="Configurações"></iframe>
+      </section>
+
+      <!-- Painel 4: Meus Estudantes -->
+      <section class="slide-panel" data-panel="meus-estudantes">
+        <iframe class="panel-iframe" id="frameMeusEstudantes" title="Meus Estudantes"></iframe>
+      </section>
+
+      <!-- Painel 5: Contato da Escola / Ajuda -->
+      <section class="slide-panel" data-panel="contato-ajuda">
+        <iframe class="panel-iframe" id="frameContatoAjuda" title="Contato e Ajuda"></iframe>
+      </section>
+
+      <!-- Painel 6: Sobre o Integra Escolar -->
+      <section class="slide-panel" data-panel="sobre">
+        <iframe class="panel-iframe" id="frameSobre" title="Sobre o Integra Escolar"></iframe>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="../../assets/js/api.js"></script>
+  <script src="../../assets/js/header.js"></script>
+  <script>
+    // Se chegamos aqui vindo de outra tela pedindo um painel específico
+    // (ex.: home.html?painel=meus-estudantes), já abre ele direto.
+    (function () {
+      const painel = new URLSearchParams(window.location.search).get('painel');
+      const paineisValidos = ['historico', 'configuracoes', 'meus-estudantes', 'contato-ajuda', 'sobre'];
+      if (painel && paineisValidos.includes(painel)) {
+        irPainel(painel);
+      }
+    })();
+  </script>
+</body>
+</html>

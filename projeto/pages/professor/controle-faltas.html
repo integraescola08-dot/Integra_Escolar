@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integra Escolar | Professor(a)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/professor.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
+    </div>
+    <div class="top-content">
+      <div class="user">
+        <i class="fa-solid fa-chalkboard-user"></i>
+        <span>Professor(a)</span>
+      </div>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Meu Perfil</span></div>
+      <div class="menu-item"><i class="fa-regular fa-clock"></i><span>Histórico</span></div>
+      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
+
+    <nav class="quick-menu"></nav>
+    <a href="controle-faltas.html"
+       class="quick-item active"
+       onclick="ir('controle-faltas.html', this)">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Controle de Faltas</span>
+    </a>
+    <a href="historico-professor.html"
+       class="quick-item"
+       onclick="ir('historico-professor.html', this)">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Histórico</span>
+    </a>
+    <a href="configuracoes-professor.html"
+       class="quick-item"
+       onclick="ir('configuracoes-professor.html', this)">
+        <i class="fa-solid fa-gear"></i>
+        <span>Configurações</span>
+    </a>
+</nav>
+  </header>
+
+  <div class="container">
+    <div class="card-header">
+      <div class="titulo-linha">
+        <h1>Controle de Faltas</h1>
+        <button class="btn-nova-falta" onclick="abrirModalFalta()">
+          <i class="fa-solid fa-plus"></i> Registrar Falta
+        </button>
+      </div>
+
+      <!-- Barra de pesquisa -->
+      <div class="barra-pesquisa">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="pesquisa" placeholder="Pesquisar aluno...">
+      </div>
+
+      <!-- Filtros -->
+      <div class="filtros">
+        <select id="materia">
+          <option value="">Matéria</option>
+        </select>
+        <select id="turma">
+          <option value="">Turma</option>
+        </select>
+        <select id="status">
+          <option value="todos">Todos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="justificada">Justificadas</option>
+          <option value="aplicada">Falta Aplicada</option>
+        </select>
+        <div class="campo-data">
+          <input type="date" id="dataFiltro">
+        </div>
+      </div>
+
+      <!-- Tab única de notificações -->
+      <div class="tabs">
+        <button class="tab active">
+          <i class="fa-regular fa-bell"></i>
+          Notificações
+          <span class="badge" id="badgePendentes">0</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Aviso -->
+      <div class="aviso" style="display:none">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="textoPendencias">0 falta(s) aguardando decisão.</span>
+      </div>
+
+      <!-- Lista -->
+      <div id="listaAlunos">
+        <p style="text-align:center;color:var(--texto-secundario);padding:40px 0">Carregando...</p>
+      </div>
+
+      <!-- Estado vazio -->
+      <div class="sem-registros" id="semRegistros">
+        <i class="fa-regular fa-circle-check"></i>
+        Nenhuma notificação pendente.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Popup confirmação -->
+  <div class="popup-overlay" id="popup">
+    <div class="popup">
+      <div class="check-icon" id="popupIcone">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <h2 id="popupTitulo">Falta Justificada</h2>
+      <p id="popupTexto">A falta foi marcada como justificada no sistema.</p>
+      <button class="popup-btn" id="fecharPopup">OK</button>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Falta -->
+  <div class="popup-overlay" id="modalFalta">
+    <div class="popup popup-form">
+      <h2 style="text-align:left">Registrar Falta</h2>
+      <div class="campo-form">
+        <label>Turma</label>
+        <select id="faltaTurma" onchange="aoTrocarTurmaModal()">
+          <option value="">Selecione a turma...</option>
+        </select>
+      </div>
+      <div class="campo-form">
+        <label>Estudante</label>
+        <select id="faltaAluno">
+          <option value="">Selecione a turma primeiro...</option>
+        </select>
+      </div>
+      <div class="campo-form">
+        <label>Aula</label>
+        <select id="faltaHorario">
+          <option value="">Selecione a turma primeiro...</option>
+        </select>
+      </div>
+      <div class="campo-form">
+        <label>Data</label>
+        <input type="date" id="faltaData">
+      </div>
+      <p class="erro-form" id="faltaErro"></p>
+      <div class="botoes-modal">
+        <button class="btn-secundario" onclick="fecharModalFalta()">Cancelar</button>
+        <button class="btn-justificado" onclick="enviarFalta()">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../assets/js/api.js"></script>
+  <script src="../../assets/js/header.js"></script>
+  <script src="../../assets/js/professor.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+
+:root {
+  --azul-principal:   #1A56A0;
+  --azul-medio:       #378ADD;
+  --azul-claro:       #E6F1FB;
+  --azul-escuro:      #0C447C;
+  --fundo-pagina:     #F4F7FA;
+  --branco:           #FFFFFF;
+  --texto-principal:  #2C2C2A;
+  --texto-secundario: #888780;
+  --borda:            #D3D1C7;
+  --verde:            #639922;
+  --verde-claro:      #EAF3DE;
+  --ambar:            #BA7517;
+  --ambar-claro:      #FAEEDA;
+  --vermelho:         #E24B4A;
+  --vermelho-claro:   #FCEBEB;
+}

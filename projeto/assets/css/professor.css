@@ -1,0 +1,250 @@
+/* ============================================================
+   Integra Escolar — Controle de Faltas (Professor)
+   (header em header.css)
+   ============================================================ */
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  background: var(--branco);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,.1);
+}
+
+/* ── Header interno do card ── */
+.card-header {
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  padding: 28px;
+  color: var(--branco);
+}
+.card-header h1 { margin-bottom: 16px; font-size: 30px; }
+
+.titulo-linha { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.titulo-linha h1 { margin-bottom: 0; }
+.btn-nova-falta {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 18px; margin-bottom: 16px;
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.35);
+  border-radius: 10px;
+  color: var(--branco); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: .2s; font-family: inherit;
+}
+.btn-nova-falta:hover { background: rgba(255,255,255,.28); }
+
+/* ── Barra de pesquisa ── */
+.barra-pesquisa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.3);
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 48px;
+  margin-bottom: 14px;
+  transition: .25s;
+}
+.barra-pesquisa:focus-within {
+  background: rgba(255,255,255,.25);
+  border-color: rgba(255,255,255,.6);
+}
+.barra-pesquisa i { color: rgba(255,255,255,.7); font-size: 16px; }
+.barra-pesquisa input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--branco); font-size: 15px; font-family: Arial, sans-serif;
+}
+.barra-pesquisa input::placeholder { color: rgba(255,255,255,.6); }
+
+/* ── Filtros ── */
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.filtros select,
+.filtros input {
+  width: 100%; height: 44px;
+  border: 1.5px solid rgba(255,255,255,.3);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: rgba(255,255,255,.15);
+  color: var(--branco);
+  font-size: 14px;
+  outline: none;
+  transition: .25s;
+  font-family: Arial, sans-serif;
+}
+.filtros select option { color: var(--texto-principal); background: var(--branco); }
+.filtros select:focus,
+.filtros input:focus {
+  background: rgba(255,255,255,.25);
+  border-color: rgba(255,255,255,.6);
+}
+
+/* ── Tabs ── */
+.tabs { display:flex; gap:10px; margin-top: 6px; }
+.tab {
+  flex:1; padding:13px; border:none; border-radius:12px;
+  font-size:15px; font-weight:600; cursor:pointer; transition:.25s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.tab.active {
+  background: var(--branco);
+  color: var(--azul-principal);
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+}
+.tab:not(.active) {
+  background: rgba(255,255,255,.15);
+  color: var(--branco);
+}
+.tab:not(.active):hover { background: rgba(255,255,255,.25); }
+
+/* ── Badge ── */
+.badge {
+  display:flex; align-items:center; justify-content:center;
+  min-width:22px; height:22px; padding:0 6px;
+  background: var(--vermelho); color: var(--branco);
+  font-size:11px; font-weight:700; border-radius:999px;
+}
+
+/* ── Conteúdo ── */
+.content { padding: 28px; }
+
+/* ── Aviso âmbar ── */
+.aviso {
+  background: var(--ambar-claro);
+  border: 1px solid var(--ambar);
+  color: var(--ambar);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 22px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Card do aluno ── */
+.aluno-card {
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 18px;
+  transition: box-shadow .2s, opacity .3s, transform .3s;
+}
+.aluno-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+
+.aluno-nome { font-size:22px; font-weight:700; color:var(--texto-principal); margin-bottom:8px; }
+.aluno-info { color:var(--texto-secundario); font-size:14px; margin-bottom:20px; }
+
+/* ── Botões ── */
+.botoes { display:flex; gap:14px; }
+
+.btn {
+  flex:1; height:50px; border-radius:12px;
+  cursor:pointer; font-size:15px; font-weight:600; transition:.25s;
+  font-family: Arial, sans-serif;
+}
+
+/* Botão único: Justificado */
+.btn-justificado {
+  border: none;
+  color: var(--branco);
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  box-shadow: 0 4px 12px rgba(26,86,160,.25);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-justificado:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(26,86,160,.35); }
+.btn-justificado:active { transform:scale(.98); }
+
+/* Botão: Aplicar Falta (mantém a falta, sem justificativa) */
+.btn-aplicar {
+  border: 1.5px solid var(--vermelho);
+  color: var(--vermelho);
+  background: var(--vermelho-claro);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-aplicar:hover { filter: brightness(.95); }
+.btn-aplicar:active { transform:scale(.98); }
+
+/* ── Status final ── */
+.status-final {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-radius: 12px;
+  font-weight: 600; font-size: 15px; width: 100%;
+}
+.status-justificada { background: var(--verde-claro); color: var(--verde); }
+.status-aplicada     { background: var(--vermelho-claro); color: var(--vermelho); }
+
+/* ── Sem registros ── */
+.sem-registros {
+  text-align:center; color:var(--texto-secundario);
+  padding:50px 20px; display:none;
+}
+.sem-registros i { font-size:48px; color:var(--borda); margin-bottom:16px; display:block; }
+
+/* ── Popup ── */
+.popup-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.45);
+  display:none; justify-content:center; align-items:center; z-index:999;
+}
+.popup-overlay.show { display:flex; }
+.popup {
+  width:90%; max-width:400px; background:var(--branco);
+  border-radius:20px; padding:36px 30px; text-align:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.15);
+  animation:popIn .3s ease;
+}
+@keyframes popIn {
+  from { transform:scale(.9); opacity:0; }
+  to   { transform:scale(1);  opacity:1; }
+}
+.check-icon {
+  width:80px; height:80px; margin:0 auto 22px;
+  border-radius:50%; background:var(--verde-claro);
+  color:var(--verde); font-size:38px;
+  display:flex; justify-content:center; align-items:center;
+}
+.check-icon.tipo-aplicada { background: var(--vermelho-claro); color: var(--vermelho); }
+.check-icon.tipo-info     { background: var(--azul-claro); color: var(--azul-principal); }
+.popup h2 { margin-bottom:10px; color:var(--texto-principal); font-size:22px; }
+.popup p  { color:var(--texto-secundario); margin-bottom:24px; line-height:1.5; }
+.popup-btn {
+  width:100%; height:50px; border:none; border-radius:12px;
+  background:linear-gradient(135deg,var(--azul-principal),var(--azul-escuro));
+  color:var(--branco); font-size:16px; font-weight:600; cursor:pointer; transition:.25s;
+  font-family: Arial, sans-serif;
+}
+.popup-btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(26,86,160,.3); }
+
+/* ── Modal: Registrar Falta (formulário) ── */
+.popup-form { max-width: 440px; text-align: left; }
+.popup-form h2 { margin-bottom: 20px; }
+.campo-form { margin-bottom: 14px; }
+.campo-form label { display: block; font-size: 13px; font-weight: 600; color: var(--texto-secundario); margin-bottom: 6px; }
+.campo-form select, .campo-form input {
+  width: 100%; height: 46px; padding: 0 12px;
+  border: 1.5px solid var(--borda); border-radius: 10px;
+  font-size: 14px; font-family: inherit; color: var(--texto-principal);
+  outline: none; transition: .2s; background: var(--branco);
+}
+.campo-form select:focus, .campo-form input:focus { border-color: var(--azul-principal); }
+.erro-form { color: var(--vermelho); font-size: 13px; margin: -4px 0 10px; display: none; }
+.erro-form.show { display: block; }
+.botoes-modal { display: flex; gap: 12px; margin-top: 8px; }
+.botoes-modal .btn-secundario, .botoes-modal .btn-justificado { flex: 1; height: 48px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn-secundario { background: var(--fundo-pagina); border: 1.5px solid var(--borda); color: var(--texto-principal); }
+.btn-secundario:hover { background: var(--azul-claro); }
+
+/* ── Responsivo ── */
+@media(max-width:768px){
+  .botoes { flex-direction:column; }
+  .container { margin:20px 14px; }
+  .filtros { grid-template-columns: 1fr 1fr; }
+}
+@media(max-width:480px){
+  .filtros { grid-template-columns: 1fr; }
+}

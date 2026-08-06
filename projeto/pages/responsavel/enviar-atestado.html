@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integra Escolar | Enviar Atestado</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../../assets/css/paleta.css">
+  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/enviar-atestado.css">
+</head>
+<body>
+
+  <!-- ── Header padrão ── -->
+  <header>
+    <button class="btn-voltar" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div class="logo">
+      <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
+    </div>
+    <div class="top-content">
+      <div class="user">
+        <i class="fa-regular fa-user"></i>
+        <span>Responsável</span>
+      </div>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
+      </div>
+    </div>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item" onclick="ir('home.html?painel=meus-estudantes', null, 'voltar')"><i class="fa-solid fa-people-roof"></i><span>Meus Estudantes</span></div>
+      <div class="menu-item" onclick="ir('home.html?painel=contato-ajuda', null, 'voltar')"><i class="fa-regular fa-circle-question"></i><span>Contato e Ajuda</span></div>
+      <div class="menu-item" onclick="ir('home.html?painel=sobre', null, 'voltar')"><img src="../../assets/img/casa-simbolo.png" class="menu-icon-casa" alt=""><span>Sobre o Integra Escolar</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-content">
+
+    <!-- Seleção do estudante -->
+    <section class="select-section">
+      <h2>Selecionar Estudante</h2>
+      <div class="campo">
+        <label for="nomeEstudante">Nome do Estudante <span>*</span></label>
+        <select id="nomeEstudante" required>
+          <option value="" disabled selected>Selecione o estudante...</option>
+          <option value="1">Ana Silva</option>
+          <option value="2">Carlos Eduardo</option>
+        </select>
+      </div>
+    </section>
+    <!--Seleção da Declaração-->
+<section class="select-section">
+      <h2>Selecionar Tipo de Declaração</h2>
+      <div class="campo">
+        <label for="nomeEstudante">Tipo de Declaração <span>*</span></label>
+        <select id="tipoDeclaracao" required>
+          <option value="" disabled selected>Selecione a declaração...</option>
+          <option value="1">Atestado Médico</option>
+          <option value="2">Declaração de comparecimento à consulta médica</option>
+          <option value="3">Declaração dos pais ou responsávels</option>
+        </select>
+      </div>
+    </section>
+    <section class="upload-section">
+      <h2>Anexar Documento</h2>
+      <label class="upload-box">
+        <input type="file" id="fileInput" hidden>
+        <div class="upload-content">
+          <i class="fa-solid fa-upload"></i>
+          <h3>Clique para realizar upload</h3>
+          <p>PDF, PNG, JPG ou JPEG (máx. 10MB)</p>
+          <span id="fileName"></span>
+        </div>
+      </label>
+    </section>
+
+    <section class="obs-section">
+      <h2>Observações (opcional)</h2>
+      <textarea id="observacoesAtestado" placeholder="Adicione informações extras ao atestado..."></textarea>
+    </section>
+
+    <section class="buttons-area">
+      <button class="cancel-btn" onclick="cancelarEnvio()">Cancelar</button>
+      <button class="send-btn" onclick="enviarArquivo()">Enviar</button>
+    </section>
+
+  </main>
+
+  <script src="../../assets/js/api.js"></script>
+  <script src="../../assets/js/header.js"></script>
+  <script src="../../assets/js/enviar-atestado.js"></script>
+</body>
+</html>

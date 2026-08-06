@@ -1,0 +1,138 @@
+/* ============================================================
+   Integra Escolar — Liberar Estudante (Responsável)
+   (header em header.css)
+   ============================================================ */
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--azul-escuro);
+  margin-bottom: 24px;
+}
+
+form {
+  background: var(--branco);
+  padding: 40px;
+  border-radius: 25px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.08);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 25px;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--texto-principal);
+  font-size: 15px;
+}
+
+label span { color: var(--vermelho); }
+
+input,
+select,
+textarea {
+  border: 1px solid var(--borda);
+  border-radius: 15px;
+  padding: 18px;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+  color: var(--texto-principal);
+  background: var(--branco);
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--azul-medio);
+  box-shadow: 0 0 0 4px rgba(55,138,221,.1);
+}
+
+textarea {
+  resize: none;
+  height: 140px;
+}
+
+.linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.info-box {
+  margin-top: 25px;
+  background: var(--azul-claro);
+  border: 1px solid var(--borda);
+  border-radius: 15px;
+  padding: 20px;
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.info-box i {
+  color: var(--azul-principal);
+  font-size: 20px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.info-box p {
+  color: var(--texto-principal);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.buttons {
+  margin-top: 30px;
+  display: flex;
+  gap: 20px;
+}
+
+.cancel-btn,
+.submit-btn {
+  flex: 1;
+  border: none;
+  border-radius: 15px;
+  height: 60px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .25s;
+  font-family: Arial, sans-serif;
+}
+
+.cancel-btn {
+  background: var(--azul-claro);
+  color: var(--azul-principal);
+  border: 1.5px solid var(--borda);
+}
+.cancel-btn:hover { background: var(--borda); }
+
+.submit-btn {
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  color: var(--branco);
+  box-shadow: 0 6px 16px rgba(26,86,160,.25);
+}
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(26,86,160,.35);
+}
+.submit-btn:active { transform: scale(.98); }
+
+@media(max-width:768px) {
+  .linha   { grid-template-columns: 1fr; }
+  .buttons { flex-direction: column; }
+  form     { padding: 24px; }
+}
