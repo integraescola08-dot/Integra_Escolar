@@ -4,8 +4,19 @@ from pathlib import Path
 from datetime import datetime
 from db import fetch_all, fetch_one, execute
 from auth_utils import login_obrigatorio, papel_obrigatorio
+from email_utils import enviar_email, notificar_gestao
 
 ocorrencias_bp = Blueprint('ocorrencias', __name__)
+
+# Só aceitamos formatos que fazem sentido para um atestado/declaração.
+# Sem essa checagem, qualquer arquivo (incluindo .html, .svg ou um
+# executável renomeado) podia ser enviado e ficar disponível depois em
+# /uploads/<arquivo>.
+EXTENSOES_PERMITIDAS = {'.pdf', '.jpg', '.jpeg', '.png', '.webp', '.docx'}
+
+
+def extensao_permitida(nome_arquivo):
+    return Path(nome_arquivo or '').suffix.lower() in EXTENSOES_PERMITIDAS
 
 @ocorrencias_bp.route('', methods=['GET'])
 @login_obrigatorio
@@ -66,6 +77,8 @@ def criar_atestado():
     arquivo = request.files.get('arquivo')
     if not matricula or not arquivo:
         return jsonify({'erro': 'matricula e arquivo são obrigatórios.'}), 400
+    if not extensao_permitida(arquivo.filename):
+        return jsonify({'erro': 'Formato de arquivo não permitido. Envie PDF, imagem (jpg/png/webp) ou Word (.docx).'}), 400
     uploads = Path(current_app.config['UPLOAD_FOLDER']); uploads.mkdir(exist_ok=True)
     nome_arquivo = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{secure_filename(arquivo.filename)}"
     arquivo.save(uploads / nome_arquivo)
@@ -75,6 +88,18 @@ def criar_atestado():
         VALUES ('Atestado', 'Falta', %s, %s, %s, %s, %s, %s)
     """, (f'{tipo_declaracao}. {observacoes or ""}', nome_arquivo, data_inicio, data_fim, id_responsavel, matricula_professor))
     execute('INSERT INTO Ocorrencia_Aluno (id_ocorrencia, matricula) VALUES (%s, %s)', (id_oc, matricula))
+
+    aluno = fetch_one('SELECT nome FROM Aluno WHERE matricula = %s', (matricula,))
+    notificar_gestao(
+        assunto='Novo atestado para revisar',
+        titulo='Novo atestado enviado',
+        linhas=[
+            f"O aluno <b>{aluno['nome'] if aluno else matricula}</b> teve um atestado enviado pelo responsável.",
+            f"Tipo: {tipo_declaracao}",
+            f"Período: {data_inicio} a {data_fim}",
+            "Acesse o painel da Gestão para revisar e decidir.",
+        ]
+    )
     return jsonify({'mensagem': 'Atestado enviado com sucesso.', 'id_ocorrencia': id_oc}), 201
 
 @ocorrencias_bp.route('/liberacoes', methods=['POST'])
@@ -92,6 +117,19 @@ def criar_liberacao():
         VALUES ('Liberacao', 'Saida Antecipada', %s, %s, %s, %s, %s, %s, %s)
     """, (descricao, dados.get('data_saida'), dados.get('data_saida'), dados.get('hora_saida'), dados.get('quem_busca') or 'Responsável', id_responsavel, dados.get('matricula_professor') or 1))
     execute('INSERT INTO Ocorrencia_Aluno (id_ocorrencia, matricula) VALUES (%s, %s)', (id_oc, dados.get('matricula')))
+
+    aluno = fetch_one('SELECT nome FROM Aluno WHERE matricula = %s', (dados.get('matricula'),))
+    notificar_gestao(
+        assunto='Nova solicitação de liberação',
+        titulo='Nova solicitação de saída antecipada',
+        linhas=[
+            f"O aluno <b>{aluno['nome'] if aluno else dados.get('matricula')}</b> teve uma saída antecipada solicitada.",
+            f"Data: {dados.get('data_saida')} às {dados.get('hora_saida')}",
+            f"Motivo: {dados.get('motivo')}",
+            f"Quem busca: {dados.get('quem_busca') or 'Responsável'}",
+            "Acesse o painel da Gestão para revisar e decidir.",
+        ]
+    )
     return jsonify({'mensagem': 'Solicitação de liberação enviada com sucesso.', 'id_ocorrencia': id_oc}), 201
 
 @ocorrencias_bp.route('/faltas', methods=['POST'])
@@ -128,6 +166,26 @@ def criar_falta():
         VALUES ('Falta', 'Falta', %s, %s, %s, %s, %s)
     """, (descricao, data, data, aluno['id_responsavel'], matricula_professor))
     execute('INSERT INTO Ocorrencia_Aluno (id_ocorrencia, matricula) VALUES (%s, %s)', (id_oc, matricula))
+
+    responsavel = fetch_one(
+        """SELECT u.email, r.nome, a.nome AS aluno_nome
+           FROM Responsavel r
+           JOIN Usuario u ON u.id_usuario = r.id_usuario
+           JOIN Aluno a ON a.matricula = %s
+           WHERE r.id_responsavel = %s""",
+        (matricula, aluno['id_responsavel'])
+    )
+    if responsavel:
+        enviar_email(
+            destinatario=responsavel['email'],
+            assunto='Falta registrada',
+            titulo='Seu filho(a) recebeu uma falta',
+            linhas=[
+                f"<b>{responsavel['aluno_nome']}</b> recebeu falta em <b>{horario['materia']}</b>.",
+                f"Data: {data} — horário: {str(horario['hr_inicio'])[:5]} às {str(horario['hr_final'])[:5]}",
+                "O professor ainda pode revisar essa falta. Você será notificado da decisão.",
+            ]
+        )
     return jsonify({'mensagem': 'Falta registrada com sucesso.', 'id_ocorrencia': id_oc}), 201
 
 @ocorrencias_bp.route('/<int:id_ocorrencia>/decidir', methods=['PUT'])
@@ -138,7 +196,20 @@ def decidir_ocorrencia(id_ocorrencia):
     resposta = dados.get('resposta')
     id_usuario_aprovador = g.usuario['id_usuario']  # sempre o do token
 
-    ocorrencia = fetch_one('SELECT categoria, matricula_professor FROM Ocorrencia WHERE id_ocorrencia = %s', (id_ocorrencia,))
+    ocorrencia = fetch_one("""
+        SELECT o.categoria, o.matricula_professor, o.descricao, o.data_inicio_oc, o.hora_saida,
+               u.email AS responsavel_email, r.nome AS responsavel_nome,
+               pu.email AS professor_email,
+               a.nome AS aluno_nome
+        FROM Ocorrencia o
+        JOIN Responsavel r ON r.id_responsavel = o.id_responsavel
+        JOIN Usuario u ON u.id_usuario = r.id_usuario
+        JOIN Professor p ON p.matricula = o.matricula_professor
+        JOIN Usuario pu ON pu.id_usuario = p.id_usuario
+        LEFT JOIN Ocorrencia_Aluno oa ON oa.id_ocorrencia = o.id_ocorrencia
+        LEFT JOIN Aluno a ON a.matricula = oa.matricula
+        WHERE o.id_ocorrencia = %s
+    """, (id_ocorrencia,))
     if not ocorrencia:
         return jsonify({'erro': 'Ocorrência não encontrada.'}), 404
 
@@ -159,10 +230,56 @@ def decidir_ocorrencia(id_ocorrencia):
     else:
         msg_padrao = 'Falta mantida pelo professor.' if g.usuario['perfil'] == 'professor' else 'Rejeitado pela gestão.'
         execute("""UPDATE Ocorrencia SET registrado = FALSE, motivo_rejeicao = %s, resposta_gestao = %s, id_usuario_aprovador = %s WHERE id_ocorrencia = %s""", (resposta or msg_padrao, resposta, id_usuario_aprovador, id_ocorrencia))
+
+    aprovado = decisao == 'aprovar'
+    nome_categoria = {'Atestado': 'atestado', 'Liberacao': 'solicitação de liberação', 'Falta': 'falta'}.get(ocorrencia['categoria'], 'ocorrência')
+    resultado_texto = 'validado(a)' if aprovado else 'não validado(a)'
+
+    # Notifica sempre o responsável com o resultado da decisão.
+    enviar_email(
+        destinatario=ocorrencia['responsavel_email'],
+        assunto=f'Seu(a) {nome_categoria} foi {resultado_texto}',
+        titulo=f'{nome_categoria.capitalize()} {resultado_texto}',
+        linhas=[
+            f"O(a) {nome_categoria} de <b>{ocorrencia['aluno_nome'] or ''}</b> foi <b>{resultado_texto}</b>.",
+            f"Observação: {resposta}" if resposta else '',
+        ]
+    )
+
+    # Se foi atestado/liberação aprovado pela gestão, o professor da aula
+    # também precisa saber que aquele estudante vai faltar/sair naquele dia.
+    if aprovado and ocorrencia['categoria'] in ('Atestado', 'Liberacao') and g.usuario['perfil'] == 'gestao':
+        enviar_email(
+            destinatario=ocorrencia['professor_email'],
+            assunto=f"Aviso: {ocorrencia['aluno_nome'] or 'aluno'} — {nome_categoria}",
+            titulo='Ausência de estudante confirmada pela gestão',
+            linhas=[
+                f"O aluno <b>{ocorrencia['aluno_nome'] or ''}</b> teve {nome_categoria} aprovado(a) pela gestão.",
+                f"Data: {ocorrencia['data_inicio_oc']}" + (f" às {str(ocorrencia['hora_saida'])[:5]}" if ocorrencia['hora_saida'] else ''),
+                f"Motivo: {ocorrencia['descricao'] or ''}",
+            ]
+        )
     return jsonify({'mensagem': 'Decisão registrada com sucesso.'})
 
 @ocorrencias_bp.route('/<int:id_ocorrencia>/confirmar-saida', methods=['PUT'])
 @papel_obrigatorio('porteiro')
 def confirmar_saida(id_ocorrencia):
     execute('UPDATE Ocorrencia SET saida_confirmada = TRUE, data_saida_confirmada = NOW() WHERE id_ocorrencia = %s', (id_ocorrencia,))
+
+    info = fetch_one("""
+        SELECT u.email AS responsavel_email, a.nome AS aluno_nome
+        FROM Ocorrencia o
+        JOIN Responsavel r ON r.id_responsavel = o.id_responsavel
+        JOIN Usuario u ON u.id_usuario = r.id_usuario
+        LEFT JOIN Ocorrencia_Aluno oa ON oa.id_ocorrencia = o.id_ocorrencia
+        LEFT JOIN Aluno a ON a.matricula = oa.matricula
+        WHERE o.id_ocorrencia = %s
+    """, (id_ocorrencia,))
+    if info:
+        enviar_email(
+            destinatario=info['responsavel_email'],
+            assunto='Saída confirmada pela portaria',
+            titulo='Seu filho(a) saiu da escola',
+            linhas=[f"A saída de <b>{info['aluno_nome'] or ''}</b> foi confirmada agora pela portaria."]
+        )
     return jsonify({'mensagem': 'Saída confirmada com sucesso.'})

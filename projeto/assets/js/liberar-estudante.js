@@ -13,7 +13,7 @@ async function carregarAlunos() {
 
   select.innerHTML = '<option value="" disabled selected>Selecione o estudante...</option>';
   alunos.forEach(aluno => {
-    select.innerHTML += `<option value="${aluno.matricula}">${aluno.nome} - ${aluno.descricao || aluno.turma}</option>`;
+    select.innerHTML += `<option value="${escapeHtml(aluno.matricula)}">${escapeHtml(aluno.nome)} - ${escapeHtml(aluno.descricao || aluno.turma)}</option>`;
   });
 
   // Se a página foi aberta a partir de "Meus Estudantes" (?matricula=123),

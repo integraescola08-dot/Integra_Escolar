@@ -124,8 +124,8 @@
       <div class="gestao-msg ${status}">
         ${ICON_MSG}
         <div>
-          <div class="gestao-msg-label">Mensagem da Gestão${data ? ' — ' + data : ''}</div>
-          <div class="gestao-msg-text">${msg}</div>
+          <div class="gestao-msg-label">Mensagem da Gestão${data ? ' — ' + escapeHtml(data) : ''}</div>
+          <div class="gestao-msg-text">${escapeHtml(msg)}</div>
         </div>
       </div>`;
   }
@@ -136,18 +136,18 @@
       <div class="item-card">
         <div class="item-top">
           <div>
-            <div class="item-name">${a.estudante}</div>
+            <div class="item-name">${escapeHtml(a.estudante)}</div>
             <div class="item-meta">
-              ${ICON_CAL} ${a.data}
+              ${ICON_CAL} ${escapeHtml(a.data)}
               <span class="dot">•</span>
-              ${ICON_DOC} ${a.tipo}
+              ${ICON_DOC} ${escapeHtml(a.tipo)}
             </div>
           </div>
           ${badge(a.status)}
         </div>
         <div class="info-box">
-          <div class="info-box-row">${ICON_FILE} ${a.arquivo}</div>
-          ${a.observacao ? `<div class="info-box-row" style="color:#64748b;font-style:italic">${a.observacao}</div>` : ''}
+          <div class="info-box-row">${ICON_FILE} ${escapeHtml(a.arquivo)}</div>
+          ${a.observacao ? `<div class="info-box-row" style="color:#64748b;font-style:italic">${escapeHtml(a.observacao)}</div>` : ''}
         </div>
         ${gestaoBlock(a.status, a.mensagemGestao, a.dataDecisao)}
       </div>`;
@@ -159,11 +159,11 @@
       <div class="item-card">
         <div class="item-top">
           <div>
-            <div class="item-name">${l.estudante}</div>
+            <div class="item-name">${escapeHtml(l.estudante)}</div>
             <div class="item-meta">
-              ${ICON_CAL} ${l.data}
+              ${ICON_CAL} ${escapeHtml(l.data)}
               <span class="dot">•</span>
-              ${ICON_CLOCK} ${l.horario}
+              ${ICON_CLOCK} ${escapeHtml(l.horario)}
             </div>
           </div>
           ${badge(l.status)}
@@ -171,9 +171,9 @@
         <div class="info-box">
           <div class="info-box-row">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            <strong style="color:#475569">Motivo:</strong> ${l.motivo}
+            <strong style="color:#475569">Motivo:</strong> ${escapeHtml(l.motivo)}
           </div>
-          <div class="info-box-row">${ICON_USER} <strong style="color:#475569">Responsável:</strong> ${l.responsavel}</div>
+          <div class="info-box-row">${ICON_USER} <strong style="color:#475569">Responsável:</strong> ${escapeHtml(l.responsavel)}</div>
         </div>
         ${gestaoBlock(l.status, l.mensagemGestao, l.dataDecisao)}
       </div>`;

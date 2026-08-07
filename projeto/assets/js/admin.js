@@ -31,7 +31,7 @@ function dadosDoFormulario(form) {
 function renderizarLinhas(lista, campos) {
   if (!lista.length) return '<p class="vazio">Nenhum registro cadastrado.</p>';
   return lista.map(item =>
-    `<div class="linha">${campos.map(c => `<span>${item[c] ?? '—'}</span>`).join('')}</div>`
+    `<div class="linha">${campos.map(c => `<span>${escapeHtml(item[c] ?? '—')}</span>`).join('')}</div>`
   ).join('');
 }
 
@@ -62,7 +62,7 @@ async function carregar() {
 
   const selectTurma = document.querySelector('#form-aluno select');
   selectTurma.innerHTML = '<option value="">Selecione a turma</option>' +
-    turmas.map(t => `<option value="${t.codigo}">${t.codigo} — ${t.descricao}</option>`).join('');
+    turmas.map(t => `<option value="${escapeHtml(t.codigo)}">${escapeHtml(t.codigo)} — ${escapeHtml(t.descricao)}</option>`).join('');
 }
 
 // ── Troca de abas ─────────────────────────────────────────────

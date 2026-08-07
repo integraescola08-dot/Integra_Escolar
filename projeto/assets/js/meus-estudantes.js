@@ -59,10 +59,10 @@ function renderizar(alunos) {
     return `
       <div class="aluno-card">
         <div class="aluno-top">
-          <div class="aluno-avatar">${getIniciais(aluno.nome)}</div>
+          <div class="aluno-avatar">${escapeHtml(getIniciais(aluno.nome))}</div>
           <div class="aluno-info">
-            <div class="aluno-nome" title="${aluno.nome}">${aluno.nome}</div>
-            <div class="aluno-turma">${turmaLabel}</div>
+            <div class="aluno-nome" title="${escapeHtml(aluno.nome)}">${escapeHtml(aluno.nome)}</div>
+            <div class="aluno-turma">${escapeHtml(turmaLabel)}</div>
           </div>
         </div>
         <span class="aluno-chip">Matrícula ${aluno.matricula}</span>

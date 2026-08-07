@@ -82,11 +82,12 @@ SELECT id_usuario, 'Portaria Teste'
 FROM Usuario WHERE email = 'porteiro@integra.com'
 ON DUPLICATE KEY UPDATE nome = VALUES(nome);
 
--- Conta de administrador de teste (senha: 123456, igual às outras).
+-- Conta de administrador de teste (senha: 123456, salva com hash — igual
+-- às outras contas de teste; o login não aceita mais texto puro).
 -- Para criar um administrador "de verdade" mais pra frente, use o
 -- script criar_administrador.py, que já gera a senha com hash.
 INSERT INTO Usuario (email, senha, nivel_acesso)
-VALUES ('admin@integra.com', '123456', 5)
+VALUES ('admin@integra.com', 'scrypt:32768:8:1$TYoUlT1F0nSgLNs8$6cf9d99f958735bdc49a825636946b428f5aa81c2e0b56615c965be2b442055e4674e9551fa03dd37e4be5c5d41598f4ed39847cbdb90523fb5a352043512e3b', 5)
 ON DUPLICATE KEY UPDATE email = VALUES(email);
 
 INSERT INTO Administrador (id_usuario, nome)

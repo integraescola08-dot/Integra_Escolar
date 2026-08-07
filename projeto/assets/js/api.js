@@ -1,4 +1,23 @@
-const API_URL = "http://127.0.0.1:5000/api";
+// Antes: URL fixa em 127.0.0.1, só funcionava rodando local.
+// Agora: usa o mesmo domínio/porta de onde a página foi carregada, então
+// funciona sem alteração tanto em localhost quanto no servidor de produção
+// (o Flask serve o front-end e a API no mesmo host).
+const API_URL = `${window.location.origin}/api`;
+
+// Utilitário compartilhado: escapa texto antes de inserir em innerHTML,
+// evitando que nomes/observações digitados por usuários (ex.: "motivo" de
+// uma liberação, "nome" no cadastro) sejam interpretados como HTML/script.
+function escapeHtml(texto) {
+  // Escapa também aspas: o texto entra tanto em conteúdo de tag quanto
+  // dentro de atributos (ex.: title="${...}"), e aspas não escapadas
+  // permitem "quebrar" um atributo e injetar HTML/JS ali.
+  return (texto === null || texto === undefined ? '' : String(texto))
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 function getUsuarioLogado() {
   try { return JSON.parse(localStorage.getItem('usuarioIntegra')); }

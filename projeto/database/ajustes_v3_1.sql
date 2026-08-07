@@ -22,8 +22,9 @@ CREATE INDEX idx_ocorrencia_categoria ON Ocorrencia (categoria);
 CREATE INDEX idx_ocorrencia_registrado ON Ocorrencia (registrado);
 
 -- Professor padrão para receber solicitações enquanto o front não escolhe professor.
+-- Senha: 123456 (salva com hash — o login não aceita mais texto puro).
 INSERT INTO Usuario (email, senha, telefone, nivel_acesso)
-VALUES ('professor@integra.com', '123456', NULL, 2)
+VALUES ('professor@integra.com', 'scrypt:32768:8:1$TYoUlT1F0nSgLNs8$6cf9d99f958735bdc49a825636946b428f5aa81c2e0b56615c965be2b442055e4674e9551fa03dd37e4be5c5d41598f4ed39847cbdb90523fb5a352043512e3b', NULL, 2)
 ON DUPLICATE KEY UPDATE email=email;
 
 INSERT INTO Professor (id_usuario, nome)

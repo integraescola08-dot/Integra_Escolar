@@ -68,8 +68,8 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
     const titulo = tipo === 'atestado' ? 'Atestado/Declaração' : 'Liberação de saída';
     const data = formatarDataBR(o.data_inicio_oc);
     const hora = tipo === 'liberacao' ? ` &nbsp;•&nbsp; <i class="fa-regular fa-clock"></i> ${formatarHora(o.hora_saida)}` : '';
-    const arquivo = o.arquivo ? `<div class="arquivo"><i class="fa-regular fa-file-pdf"></i> ${o.arquivo}</div>` : '';
-    const quemBusca = tipo === 'liberacao' ? `<div class="quem-busca-info"><i class="fa-regular fa-user"></i> Quem irá buscar: <strong>${o.quem_busca || 'Responsável'}</strong></div>` : '';
+    const arquivo = o.arquivo ? `<div class="arquivo"><i class="fa-regular fa-file-pdf"></i> ${escapeHtml(o.arquivo)}</div>` : '';
+    const quemBusca = tipo === 'liberacao' ? `<div class="quem-busca-info"><i class="fa-regular fa-user"></i> Quem irá buscar: <strong>${escapeHtml(o.quem_busca || 'Responsável')}</strong></div>` : '';
     const botao = status === 'pendente' ? `<button class="btn-analisar" id="btn-${id}" onclick="${tipo === 'atestado' ? 'abrirModal' : 'abrirModalLiberacao'}('${id}')"><i class="fa-regular fa-message"></i> Analisar e Decidir</button>` : '';
     const statusClasse = status === 'aprovado' ? 'aprovado' : status === 'rejeitado' ? 'rejeitado' : 'pendente';
     const statusTexto = status === 'aprovado' ? '✓ Aprovado' : status === 'rejeitado' ? '✕ Rejeitado' : '<i class="fa-regular fa-clock"></i> Pendente';
@@ -87,15 +87,15 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
         <div class="aluno">
           <div class="icone ${iconeClasse}"><i class="fa-regular fa-file-lines"></i></div>
           <div>
-            <div class="nome">${o.aluno_nome || 'Aluno'}</div>
-            <div class="sub">${titulo} — ${o.aluno_turma || ''}</div>
+            <div class="nome">${escapeHtml(o.aluno_nome || 'Aluno')}</div>
+            <div class="sub">${titulo} — ${escapeHtml(o.aluno_turma || '')}</div>
             <div class="data"><i class="fa-regular fa-calendar"></i> ${data}${hora}</div>
           </div>
         </div>
         <div class="status ${statusClasse}" id="status-${id}">${statusTexto}</div>
       </div>
       ${arquivo}
-      <div class="obs">"${o.descricao || ''}"</div>
+      <div class="obs">"${escapeHtml(o.descricao || '')}"</div>
       ${quemBusca}
       ${botao}`;
     (status === 'pendente' ? pendentes : historico).appendChild(div);

@@ -198,11 +198,14 @@ INSERT INTO Turma (codigo, descricao) VALUES
 ('3TDSB', '3º TDS B'),
 ('3MKTB', '3º MKT B');
 
+-- Senha de todos os usuários de teste abaixo: 123456
+-- (hash gerado com werkzeug.security.generate_password_hash — o login
+-- agora exige senha com hash, não aceita mais texto puro)
 INSERT INTO Usuario (email, senha, telefone, nivel_acesso) VALUES
-('responsavel@integra.com', '123456', '81999999999', 1),
-('professor@integra.com',   '123456', NULL,          2),
-('gestao@integra.com',      '123456', NULL,          3),
-('porteiro@integra.com',    '123456', NULL,          4);
+('responsavel@integra.com', 'scrypt:32768:8:1$Rsg0RiHI5mqIv1EA$0c12baf2933051adf15e9c4c06a9b0f8d77a33f4d90fc41468e576ae8f48b7ea27fb4d79ba2b95aee1890862941ce4e485ead202b095eede8c6d1771fed64f0d', '81999999999', 1),
+('professor@integra.com',   'scrypt:32768:8:1$Rsg0RiHI5mqIv1EA$0c12baf2933051adf15e9c4c06a9b0f8d77a33f4d90fc41468e576ae8f48b7ea27fb4d79ba2b95aee1890862941ce4e485ead202b095eede8c6d1771fed64f0d', NULL,          2),
+('gestao@integra.com',      'scrypt:32768:8:1$Rsg0RiHI5mqIv1EA$0c12baf2933051adf15e9c4c06a9b0f8d77a33f4d90fc41468e576ae8f48b7ea27fb4d79ba2b95aee1890862941ce4e485ead202b095eede8c6d1771fed64f0d', NULL,          3),
+('porteiro@integra.com',    'scrypt:32768:8:1$Rsg0RiHI5mqIv1EA$0c12baf2933051adf15e9c4c06a9b0f8d77a33f4d90fc41468e576ae8f48b7ea27fb4d79ba2b95aee1890862941ce4e485ead202b095eede8c6d1771fed64f0d', NULL,          4);
 
 INSERT INTO Responsavel (id_usuario, cpf, nome, telefone)
 SELECT id_usuario, '12345678901', 'Responsável Teste', '81999999999'

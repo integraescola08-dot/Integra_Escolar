@@ -1,3 +1,5 @@
+import time
+from collections import defaultdict
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from mysql.connector import IntegrityError
@@ -8,6 +10,26 @@ auth_bp = Blueprint('auth', __name__)
 
 NIVEIS = {1: 'responsavel', 2: 'professor', 3: 'gestao', 4: 'porteiro', 5: 'administrador'}
 
+# Rate limit simples contra força bruta no login: no máximo TENTATIVAS_MAX
+# tentativas falhas por email dentro da JANELA_SEGUNDOS. Guardado em memória
+# do processo — funciona bem para um app com um único worker; se o projeto
+# crescer para vários workers/servidores, isso precisa migrar para algo
+# compartilhado (ex.: Redis).
+TENTATIVAS_MAX = 5
+JANELA_SEGUNDOS = 5 * 60
+_tentativas_falhas = defaultdict(list)
+
+
+def _bloqueado_por_tentativas(chave):
+    agora = time.time()
+    _tentativas_falhas[chave] = [t for t in _tentativas_falhas[chave] if agora - t < JANELA_SEGUNDOS]
+    return len(_tentativas_falhas[chave]) >= TENTATIVAS_MAX
+
+
+def _registrar_tentativa_falha(chave):
+    _tentativas_falhas[chave].append(time.time())
+
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     dados = request.get_json() or {}
@@ -17,16 +39,20 @@ def login():
     if not email or not senha:
         return jsonify({'erro': 'Email e senha são obrigatórios.'}), 400
 
+    if _bloqueado_por_tentativas(email):
+        return jsonify({'erro': 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.'}), 429
+
     usuario = fetch_one('SELECT * FROM Usuario WHERE email = %s', (email,))
     if not usuario:
+        _registrar_tentativa_falha(email)
         return jsonify({'erro': 'Usuário não encontrado.'}), 401
 
-    senha_banco = usuario['senha']
-    senha_ok = senha_banco == senha
-    if isinstance(senha_banco, str) and senha_banco.startswith(('pbkdf2:', 'scrypt:', 'bcrypt:')):
-        senha_ok = check_password_hash(senha_banco, senha)
+    # A senha precisa estar salva com hash (todo cadastro novo já usa
+    # generate_password_hash). Não há mais fallback para texto puro.
+    senha_ok = check_password_hash(usuario['senha'], senha)
 
     if not senha_ok:
+        _registrar_tentativa_falha(email)
         return jsonify({'erro': 'Senha incorreta.'}), 401
 
     perfil_banco = NIVEIS.get(usuario['nivel_acesso'])

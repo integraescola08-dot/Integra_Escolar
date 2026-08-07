@@ -24,13 +24,13 @@ async function carregarLiberados() {
       <div class="card-corpo">
         <div class="aluno-info">
           <div class="avatar ${saiu ? 'avatar-saiu' : ''}"><i class="fa-regular fa-user"></i></div>
-          <div><h2>${o.aluno_nome || 'Aluno'}</h2><div class="detalhes">
-            <span><i class="fa-solid fa-users"></i> ${o.aluno_turma || ''}</span>
+          <div><h2>${escapeHtml(o.aluno_nome || 'Aluno')}</h2><div class="detalhes">
+            <span><i class="fa-solid fa-users"></i> ${escapeHtml(o.aluno_turma || '')}</span>
             <span><i class="fa-regular fa-clock"></i> Saída: ${formatarHora(o.hora_saida)}</span>
-            <span><i class="fa-solid fa-circle-info"></i> ${o.descricao || ''}</span>
+            <span><i class="fa-solid fa-circle-info"></i> ${escapeHtml(o.descricao || '')}</span>
           </div></div>
         </div>
-        <div class="quem-busca"><i class="fa-regular fa-user"></i><div>Quem irá buscar<br><strong>${o.quem_busca || 'Responsável'}</strong></div></div>
+        <div class="quem-busca"><i class="fa-regular fa-user"></i><div>Quem irá buscar<br><strong>${escapeHtml(o.quem_busca || 'Responsável')}</strong></div></div>
       </div>
       ${saiu ? '' : '<div class="card-acoes"><button class="btn-confirmar-saida" onclick="confirmarSaida(this)"><i class="fa-solid fa-check"></i> Confirmar Saída</button></div>'}`;
     lista.appendChild(card);
@@ -48,7 +48,7 @@ function confirmarSaida(botao) {
   const nome = card.querySelector('h2').textContent.trim();
   const quem = card.querySelector('.quem-busca strong').textContent.trim();
   cardSelecionado = card;
-  document.getElementById('textoConfirmar').innerHTML = `Confirmar saída de <strong>${nome}</strong>?<br><br><span style="color:var(--texto-secundario);font-size:14px;">Sendo buscado por: <strong style="color:var(--texto-principal)">${quem}</strong></span>`;
+  document.getElementById('textoConfirmar').innerHTML = `Confirmar saída de <strong>${escapeHtml(nome)}</strong>?<br><br><span style="color:var(--texto-secundario);font-size:14px;">Sendo buscado por: <strong style="color:var(--texto-principal)">${escapeHtml(quem)}</strong></span>`;
   document.getElementById('modalConfirmar').classList.add('show');
 }
 async function executarConfirmacao() {
