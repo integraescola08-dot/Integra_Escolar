@@ -1,6 +1,48 @@
 /* Integra Escolar — Liberar Estudante conectado ao Flask */
 
 document.addEventListener('DOMContentLoaded', carregarAlunos);
+document.addEventListener('DOMContentLoaded', configurarCalendarioLiberacao);
+document.addEventListener('DOMContentLoaded', configurarHorarioLiberacao);
+
+// Restringe o calendário de "Data da Liberação" ao ano atual e bloqueia
+// fins de semana (só é permitido escolher de segunda a sexta-feira).
+function configurarCalendarioLiberacao() {
+  const anoAtual = new Date().getFullYear();
+  const dataInput = document.getElementById('dataLiberacao');
+  if (!dataInput) return;
+
+  dataInput.min = `${anoAtual}-01-01`;
+  dataInput.max = `${anoAtual}-12-31`;
+
+  dataInput.addEventListener('input', function () {
+    if (!dataInput.value) return;
+    const diaSemana = new Date(dataInput.value + 'T00:00:00').getDay();
+    if (diaSemana === 0 || diaSemana === 6) {
+      alert('Só é possível selecionar datas de segunda a sexta-feira.');
+      dataInput.value = '';
+    }
+  });
+}
+
+// Garante que o horário digitado seja um horário válido (00:00 a 23:59).
+function horarioValido(hora) {
+  if (!/^\d{2}:\d{2}$/.test(hora)) return false;
+  const [h, m] = hora.split(':').map(Number);
+  return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+}
+
+function configurarHorarioLiberacao() {
+  const horaInput = document.getElementById('horaLiberacao');
+  if (!horaInput) return;
+
+  horaInput.addEventListener('input', function () {
+    if (!horaInput.value) return;
+    if (!horarioValido(horaInput.value)) {
+      alert('Digite um horário válido (00:00 a 23:59).');
+      horaInput.value = '';
+    }
+  });
+}
 
 async function carregarAlunos() {
   const usuario = getUsuarioLogado();
@@ -34,6 +76,22 @@ document.getElementById('formLiberacao').addEventListener('submit', async functi
 
   if (!usuario?.pessoa?.id) { alert('Faça login novamente.'); return; }
   if (!estudante || !data || !hora || !motivo) { alert('Preencha todos os campos obrigatórios.'); return; }
+
+  if (!horarioValido(hora)) {
+    alert('Digite um horário válido (00:00 a 23:59).');
+    return;
+  }
+
+  const diaSemanaHoje = new Date().getDay();
+  if (diaSemanaHoje === 0 || diaSemanaHoje === 6) {
+    alert('O envio de solicitações de liberação só pode ser realizado de segunda a sexta-feira.');
+    return;
+  }
+  const diaSemanaLiberacao = new Date(data + 'T00:00:00').getDay();
+  if (diaSemanaLiberacao === 0 || diaSemanaLiberacao === 6) {
+    alert('A data de liberação deve ser de segunda a sexta-feira.');
+    return;
+  }
 
   const resposta = await apiFetch(`${API_URL}/ocorrencias/liberacoes`, {
     method: 'POST',

@@ -46,6 +46,12 @@ async function enviarArquivo() {
   if (!estudante) { alert('Selecione o estudante.'); return; }
   if (fileInput.files.length === 0) { alert('Selecione um arquivo para enviar.'); return; }
 
+  const diaSemanaHoje = new Date().getDay();
+  if (diaSemanaHoje === 0 || diaSemanaHoje === 6) {
+    alert('O envio de atestados só pode ser realizado de segunda a sexta-feira.');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('matricula', estudante);
   formData.append('id_responsavel', usuario.pessoa.id);

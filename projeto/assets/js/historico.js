@@ -265,3 +265,15 @@
   // ── Init ──────────────────────────────────────────────────────────────────
   // (a lista é preenchida em carregarHistorico(), assim que os dados do
   // usuário chegam via postMessage — até lá, fica o aviso "Carregando...")
+
+  // Restringe os calendários "De" e "Até" ao ano atual.
+  (function configurarCalendariosHistorico() {
+    const anoAtual = new Date().getFullYear();
+    const de = document.getElementById('filtro-de');
+    const ate = document.getElementById('filtro-ate');
+    [de, ate].forEach(input => {
+      if (!input) return;
+      input.min = `${anoAtual}-01-01`;
+      input.max = `${anoAtual}-12-31`;
+    });
+  })();
