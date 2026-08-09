@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <link rel="icon" type="image/x-icon" href="../../assets/img/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/img/favicon-32.png">
+  <script>window.PERFIL_ESPERADO = 'responsavel';</script>
+  <script src="../../assets/js/guarda-sessao.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Integra Escolar | Enviar Atestado</title>
@@ -21,16 +25,13 @@
         <i class="fa-regular fa-user"></i>
         <span>Responsável</span>
       </div>
-      <div class="menu" onclick="abrirMenu()">
-        <i class="fa-solid fa-bars"></i>
-      </div>
-    </div>
-    <div class="dropdown-menu" id="dropdownMenu">
-      <div class="menu-item" onclick="ir('home.html?painel=meus-estudantes', null, 'voltar')"><i class="fa-solid fa-people-roof"></i><span>Meus Estudantes</span></div>
-      <div class="menu-item" onclick="ir('home.html?painel=contato-ajuda', null, 'voltar')"><i class="fa-regular fa-circle-question"></i><span>Contato e Ajuda</span></div>
-      <div class="menu-item" onclick="ir('home.html?painel=sobre', null, 'voltar')"><img src="../../assets/img/casa-simbolo.png" class="menu-icon-casa" alt=""><span>Sobre o Integra Escolar</span></div>
-      <div class="menu-item sair" onclick="sair()">
-        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="ir('home.html?painel=contato-ajuda', null, 'voltar')" title="Contato e Ajuda" aria-label="Contato e Ajuda">
+          <i class="fa-regular fa-circle-question"></i>
+        </button>
+        <button class="icon-btn" onclick="ir('home.html?painel=sobre', null, 'voltar')" title="Sobre o Integra Escolar" aria-label="Sobre o Integra Escolar">
+          <img src="../../assets/img/logo-branca.png" alt="">
+        </button>
       </div>
     </div>
   </header>

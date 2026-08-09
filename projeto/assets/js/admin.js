@@ -74,12 +74,27 @@ $$('.tabs button').forEach(botao => {
   });
 });
 
+// ── Máscara: só números, no máximo 7 dígitos, na matrícula do aluno ──
+const matriculaAlunoInput = document.querySelector('#form-aluno input[name="matricula"]');
+if (matriculaAlunoInput) {
+  matriculaAlunoInput.addEventListener('input', () => {
+    matriculaAlunoInput.value = matriculaAlunoInput.value.replace(/\D/g, '').slice(0, 7);
+  });
+}
+
 // ── Envio de formulários ─────────────────────────────────────
 async function enviarFormulario(form, caminho) {
   try {
+    const dados = dadosDoFormulario(form);
+
+    // Matrícula é opcional aqui — mas se foi preenchida, precisa ter 7 dígitos.
+    if (form === $('#form-aluno') && dados.matricula && dados.matricula.length !== 7) {
+      throw new Error('A matrícula deve ter exatamente 7 dígitos, ou fique em branco para gerar automaticamente.');
+    }
+
     const resultado = await chamarApi(caminho, {
       method: 'POST',
-      body: JSON.stringify(dadosDoFormulario(form))
+      body: JSON.stringify(dados)
     });
     msg(resultado.mensagem);
     form.reset();

@@ -185,6 +185,31 @@ header {
 }
 .menu:hover { opacity: .75; }
 
+/* Botões de ação do cabeçalho (Contato e Ajuda / Sobre) — substituem o
+   menu hambúrguer nas telas do responsável. */
+.header-actions {
+  margin-top: 55px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  color: var(--branco);
+  font-size: 19px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s, transform .2s;
+}
+.icon-btn:hover { background: rgba(255,255,255,.22); transform: translateY(-1px); }
+.icon-btn img { width: 20px; height: 20px; object-fit: contain; }
+
 /* ── Dropdown ── */
 .dropdown-menu {
   position: absolute;
