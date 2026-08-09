@@ -13,9 +13,6 @@
 
   <!-- ── Header padrão ── -->
   <header>
-    <button class="btn-voltar" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
-      <i class="fa-solid fa-arrow-left"></i>
-    </button>
     <div class="logo">
       <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
     </div>
@@ -42,7 +39,12 @@
 
     <!-- Seleção do estudante -->
     <section class="select-section">
-      <h2>Selecionar Estudante</h2>
+      <h2 class="titulo-com-voltar">
+        <button class="btn-voltar-inline" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        Selecionar Estudante
+      </h2>
       <div class="campo">
         <label for="nomeEstudante">Nome do Estudante <span>*</span></label>
         <select id="nomeEstudante" required>

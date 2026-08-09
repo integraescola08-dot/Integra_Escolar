@@ -13,9 +13,6 @@
 
   <!-- ── Header padrão ── -->
   <header>
-    <button class="btn-voltar" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
-      <i class="fa-solid fa-arrow-left"></i>
-    </button>
     <div class="logo">
       <img src="../../assets/img/LOGO-minimalista.png" alt="Logo">
     </div>
@@ -41,6 +38,9 @@
   <main class="container">
 
     <p class="page-title">
+      <button class="btn-voltar-inline" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
+        <i class="fa-solid fa-arrow-left"></i>
+      </button>
       <i class="fa-regular fa-user"></i>
       Liberar Estudante
     </p>
@@ -67,17 +67,6 @@
           <label for="horaLiberacao">Horário de Saída <span>*</span></label>
           <input type="time" id="horaLiberacao" required>
         </div>
-      </div>
-
-      <div class="campo">
-        <label for="motivo">Responsável pela retirada do estudante <span>*</span></label>
-        <select id="motivo" required>
-          <option value="">Selecione forma de saída</option>
-          <option>Pai/Mãe</option>
-          <option>Parente do Responsável</option>
-          <option>Motorista de Aplicativo</option>
-          <option>Outro</option>
-        </select>
       </div>
 
       <div class="campo">
