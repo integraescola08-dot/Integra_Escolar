@@ -43,14 +43,13 @@
         <button class="btn-voltar-inline" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
           <i class="fa-solid fa-arrow-left"></i>
         </button>
-        Selecionar Estudante
+        Enviar Atestado
       </h2>
+      <h2>Selecionar Estudante</h2>
       <div class="campo">
         <label for="nomeEstudante">Nome do Estudante <span>*</span></label>
         <select id="nomeEstudante" required>
-          <option value="" disabled selected>Selecione o estudante...</option>
-          <option value="1">Ana Silva</option>
-          <option value="2">Carlos Eduardo</option>
+          <option value="" disabled selected>Carregando estudantes...</option>
         </select>
       </div>
     </section>
@@ -64,30 +63,37 @@
           <option value="1">Atestado Médico</option>
           <option value="2">Declaração de comparecimento à consulta médica</option>
           <option value="3">Declaração dos pais ou responsávels</option>
+          <option value="outros">Outros</option>
         </select>
       </div>
     </section>
     <section class="upload-section">
       <h2>Anexar Documento</h2>
-      <label class="upload-box">
-        <input type="file" id="fileInput" hidden>
-        <div class="upload-content">
+      <label class="upload-box" id="uploadBox">
+        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" hidden>
+        <div class="upload-content" id="uploadContent">
           <i class="fa-solid fa-upload"></i>
           <h3>Clique para realizar upload</h3>
           <p>PDF, PNG, JPG ou JPEG (máx. 10MB)</p>
+        </div>
+        <div class="upload-preview" id="uploadPreview">
+          <i class="fa-solid fa-file-circle-check"></i>
           <span id="fileName"></span>
+          <button type="button" id="removerArquivo" title="Remover arquivo" aria-label="Remover arquivo selecionado">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
       </label>
     </section>
 
     <section class="obs-section">
-      <h2>Observações (opcional)</h2>
+      <h2 id="tituloObservacoes">Observações <span id="marcaOpcional">(opcional)</span><span id="marcaObrigatoria" style="display:none">*</span></h2>
       <textarea id="observacoesAtestado" placeholder="Adicione informações extras ao atestado..."></textarea>
     </section>
 
     <section class="buttons-area">
       <button class="cancel-btn" onclick="cancelarEnvio()">Cancelar</button>
-      <button class="send-btn" onclick="enviarArquivo()">Enviar</button>
+      <button class="send-btn" id="btnEnviar" onclick="enviarArquivo()">Enviar</button>
     </section>
 
   </main>

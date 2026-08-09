@@ -225,11 +225,20 @@ def decidir_ocorrencia(id_ocorrencia):
 
     if decisao not in ['aprovar', 'rejeitar']:
         return jsonify({'erro': 'Decisão inválida.'}), 400
+
+    eh_professor = g.usuario['perfil'] == 'professor'
+    if decisao == 'rejeitar' and not eh_professor and not (resposta or '').strip():
+        # Só a gestão precisa justificar por escrito (atestado/liberação).
+        # O professor decide falta com um clique, sem campo de texto — para
+        # ele, mantém-se a mensagem padrão abaixo.
+        return jsonify({'erro': 'Informe o motivo da rejeição.'}), 400
+
     if decisao == 'aprovar':
         execute("""UPDATE Ocorrencia SET registrado = TRUE, motivo_rejeicao = NULL, resposta_gestao = %s, id_usuario_aprovador = %s WHERE id_ocorrencia = %s""", (resposta, id_usuario_aprovador, id_ocorrencia))
     else:
-        msg_padrao = 'Falta mantida pelo professor.' if g.usuario['perfil'] == 'professor' else 'Rejeitado pela gestão.'
-        execute("""UPDATE Ocorrencia SET registrado = FALSE, motivo_rejeicao = %s, resposta_gestao = %s, id_usuario_aprovador = %s WHERE id_ocorrencia = %s""", (resposta or msg_padrao, resposta, id_usuario_aprovador, id_ocorrencia))
+        msg_padrao = 'Falta mantida pelo professor.' if eh_professor else None
+        motivo = (resposta or msg_padrao or '').strip()
+        execute("""UPDATE Ocorrencia SET registrado = FALSE, motivo_rejeicao = %s, resposta_gestao = %s, id_usuario_aprovador = %s WHERE id_ocorrencia = %s""", (motivo, resposta, id_usuario_aprovador, id_ocorrencia))
 
     aprovado = decisao == 'aprovar'
     nome_categoria = {'Atestado': 'atestado', 'Liberacao': 'solicitação de liberação', 'Falta': 'falta'}.get(ocorrencia['categoria'], 'ocorrência')
@@ -260,6 +269,63 @@ def decidir_ocorrencia(id_ocorrencia):
             ]
         )
     return jsonify({'mensagem': 'Decisão registrada com sucesso.'})
+
+@ocorrencias_bp.route('/<int:id_ocorrencia>', methods=['DELETE'])
+@papel_obrigatorio('responsavel')
+def cancelar_ocorrencia(id_ocorrencia):
+    id_responsavel = g.usuario['pessoa']['id']  # sempre o do token, nunca da URL
+
+    try:
+        ocorrencia = fetch_one("""
+            SELECT o.id_responsavel, o.categoria, o.registrado, o.motivo_rejeicao,
+                   a.nome AS aluno_nome
+            FROM Ocorrencia o
+            LEFT JOIN Ocorrencia_Aluno oa ON oa.id_ocorrencia = o.id_ocorrencia
+            LEFT JOIN Aluno a ON a.matricula = oa.matricula
+            WHERE o.id_ocorrencia = %s
+        """, (id_ocorrencia,))
+        if not ocorrencia:
+            return jsonify({'erro': 'Ocorrência não encontrada.'}), 404
+
+        # Só o próprio responsável que criou pode cancelar — e só enquanto
+        # ninguém decidiu ainda (faltas não são criadas pelo responsável, então
+        # nem entram nesta rota).
+        if ocorrencia['id_responsavel'] != id_responsavel:
+            return jsonify({'erro': 'Você não tem permissão para cancelar esta ocorrência.'}), 403
+        if ocorrencia['categoria'] not in ('Atestado', 'Liberacao'):
+            return jsonify({'erro': 'Este tipo de ocorrência não pode ser cancelado por aqui.'}), 400
+
+        pendente = not ocorrencia['registrado'] and not ocorrencia['motivo_rejeicao']
+        if not pendente:
+            return jsonify({'erro': 'Só é possível cancelar enquanto a solicitação está pendente.'}), 409
+
+        execute('DELETE FROM Ocorrencia_Aluno WHERE id_ocorrencia = %s', (id_ocorrencia,))
+        execute('DELETE FROM Ocorrencia WHERE id_ocorrencia = %s', (id_ocorrencia,))
+    except Exception as erro:
+        # Qualquer falha inesperada (banco fora do ar, etc.) sempre volta como
+        # JSON — nunca a página de erro HTML padrão do Flask, que quebraria o
+        # front-end (que só sabe interpretar respostas JSON).
+        print('Erro ao cancelar ocorrência:', erro)
+        return jsonify({'erro': 'Erro interno ao cancelar a solicitação.'}), 500
+
+    nome_categoria = 'atestado' if ocorrencia['categoria'] == 'Atestado' else 'solicitação de liberação'
+    try:
+        notificar_gestao(
+            assunto=f'Cancelamento de {nome_categoria}',
+            titulo='Solicitação cancelada pelo responsável',
+            linhas=[
+                f"O(a) {nome_categoria} de <b>{ocorrencia['aluno_nome'] or ''}</b> foi cancelado(a) pelo responsável antes de ser analisado(a).",
+                'Nenhuma ação é necessária.',
+            ]
+        )
+    except Exception as erro:
+        # O cancelamento já foi feito e confirmado ao usuário; uma falha só
+        # ao notificar a gestão por e-mail não deve reverter isso nem virar
+        # erro para quem cancelou.
+        print('Erro ao notificar gestão sobre cancelamento:', erro)
+
+    return jsonify({'mensagem': 'Solicitação cancelada com sucesso.'})
+
 
 @ocorrencias_bp.route('/<int:id_ocorrencia>/confirmar-saida', methods=['PUT'])
 @papel_obrigatorio('porteiro')

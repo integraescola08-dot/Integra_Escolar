@@ -268,6 +268,28 @@
     .gestao-msg-label { font-size: .7rem; font-weight: 600; color: var(--gray-600); margin-bottom: 2px; }
     .gestao-msg-text  { color: var(--gray-700); line-height: 1.4; }
 
+    /* ── Botão de cancelar solicitação (só aparece com status pendente) ── */
+    .btn-cancelar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 12px;
+      padding: 9px 12px;
+      border: 1px solid var(--red-200);
+      border-radius: var(--radius-sm);
+      background: var(--red-50);
+      color: var(--red-600);
+      font-family: inherit;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, box-shadow .15s;
+    }
+    .btn-cancelar:hover { background: var(--vermelho-claro); box-shadow: 0 2px 8px rgba(226,75,74,.18); }
+    .btn-cancelar svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
     /* ── Estado vazio ── */
     .empty {
       text-align: center;

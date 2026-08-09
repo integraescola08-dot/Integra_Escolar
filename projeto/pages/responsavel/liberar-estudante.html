@@ -37,11 +37,10 @@
 
   <main class="container">
 
-    <p class="page-title">
+    <p class="page-title titulo-com-voltar">
       <button class="btn-voltar-inline" onclick="ir('home.html', null, 'voltar')" title="Voltar" aria-label="Voltar para a tela inicial">
         <i class="fa-solid fa-arrow-left"></i>
       </button>
-      <i class="fa-regular fa-user"></i>
       Liberar Estudante
     </p>
 
@@ -68,6 +67,18 @@
           <input type="time" id="horaLiberacao" required>
         </div>
       </div>
+
+      <div class="campo">
+        <label for="motivo">Quem irá buscar? <span>*</span></label>
+        <select id="motivo" required>
+          <option value="">Selecione forma de saída</option>
+          <option>Próprio Responsável</option>
+          <option>Parentes do Responsável</option>
+          <option>Motorista de Aplicativo</option>
+          <option>Outro</option>
+        </select>
+      </div>
+
 
       <div class="campo">
         <label for="motivo">Motivo da Liberação <span>*</span></label>

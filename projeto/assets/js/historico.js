@@ -118,6 +118,34 @@
     return `<span class="badge ${status}">${badgeIcon(status)} ${STATUS_LABEL[status]}</span>`;
   }
 
+  // ── Botão de cancelar (só enquanto pendente) ────────────────────────────────
+  function botaoCancelar(id, status) {
+    if (status !== 'pendente') return '';
+    return `<button class="btn-cancelar" onclick="cancelarOcorrencia(${id})">${ICON_X} Cancelar solicitação</button>`;
+  }
+
+  async function cancelarOcorrencia(id) {
+    if (!confirm('Tem certeza que deseja cancelar esta solicitação? Essa ação não pode ser desfeita.')) return;
+
+    try {
+      const resposta = await apiFetch(`${API_BASE}/ocorrencias/${id}`, { method: 'DELETE' });
+
+      // Se o servidor cair em algum erro não tratado (raro, mas possível),
+      // a resposta pode não ser JSON — aqui evitamos que isso quebre a tela
+      // com uma mensagem de erro genérica em vez de um erro de parsing.
+      let resultado = {};
+      try { resultado = await resposta.json(); } catch { /* resposta sem corpo JSON */ }
+
+      if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível cancelar a solicitação. Tente novamente.');
+
+      ATESTADOS = ATESTADOS.filter(item => item.id !== id);
+      LIBERACOES = LIBERACOES.filter(item => item.id !== id);
+      render();
+    } catch (erro) {
+      alert(erro.message);
+    }
+  }
+
   function gestaoBlock(status, msg, data) {
     if (!msg) return '';
     return `
@@ -150,6 +178,7 @@
           ${a.observacao ? `<div class="info-box-row" style="color:#64748b;font-style:italic">${escapeHtml(a.observacao)}</div>` : ''}
         </div>
         ${gestaoBlock(a.status, a.mensagemGestao, a.dataDecisao)}
+        ${botaoCancelar(a.id, a.status)}
       </div>`;
   }
 
@@ -176,6 +205,7 @@
           <div class="info-box-row">${ICON_USER} <strong style="color:#475569">Responsável:</strong> ${escapeHtml(l.responsavel)}</div>
         </div>
         ${gestaoBlock(l.status, l.mensagemGestao, l.dataDecisao)}
+        ${botaoCancelar(l.id, l.status)}
       </div>`;
   }
 

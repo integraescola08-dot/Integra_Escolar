@@ -68,7 +68,9 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
     const titulo = tipo === 'atestado' ? 'Atestado/Declaração' : 'Liberação de saída';
     const data = formatarDataBR(o.data_inicio_oc);
     const hora = tipo === 'liberacao' ? ` &nbsp;•&nbsp; <i class="fa-regular fa-clock"></i> ${formatarHora(o.hora_saida)}` : '';
-    const arquivo = o.arquivo ? `<div class="arquivo"><i class="fa-regular fa-file-pdf"></i> ${escapeHtml(o.arquivo)}</div>` : '';
+    const arquivo = o.arquivo
+      ? `<a class="arquivo" href="#" onclick="abrirAnexo(event, '${escapeHtml(o.arquivo)}')"><i class="fa-regular fa-file-pdf"></i> ${escapeHtml(o.arquivo)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:.75em;margin-left:4px"></i></a>`
+      : '';
     const quemBusca = tipo === 'liberacao' ? `<div class="quem-busca-info"><i class="fa-regular fa-user"></i> Quem irá buscar: <strong>${escapeHtml(o.quem_busca || 'Responsável')}</strong></div>` : '';
     const botao = status === 'pendente' ? `<button class="btn-analisar" id="btn-${id}" onclick="${tipo === 'atestado' ? 'abrirModal' : 'abrirModalLiberacao'}('${id}')"><i class="fa-regular fa-message"></i> Analisar e Decidir</button>` : '';
     const statusClasse = status === 'aprovado' ? 'aprovado' : status === 'rejeitado' ? 'rejeitado' : 'pendente';
@@ -108,6 +110,7 @@ function abrirModal(id) {
   document.getElementById('modal-nome-atestado').textContent = item.querySelector('.nome').textContent;
   document.querySelectorAll('#modal .opcao').forEach(o => o.classList.remove('active'));
   document.getElementById('respostaAtestado').value = '';
+  atualizarPlaceholderResposta('respostaAtestado', false);
   document.getElementById('modal').classList.add('show');
 }
 function fecharModal() { document.getElementById('modal').classList.remove('show'); itemAtualAtestado = null; }
@@ -117,6 +120,7 @@ function abrirModalLiberacao(id) {
   document.getElementById('modal-nome-liberacao').textContent = item.querySelector('.nome').textContent;
   document.querySelectorAll('#modalLiberacao .opcao').forEach(o => o.classList.remove('active'));
   document.getElementById('respostaLiberacao').value = '';
+  atualizarPlaceholderResposta('respostaLiberacao', false);
   document.getElementById('modalLiberacao').classList.add('show');
 }
 function fecharModalLiberacao() { document.getElementById('modalLiberacao').classList.remove('show'); itemAtualLiberacao = null; }
@@ -124,16 +128,30 @@ function fecharModalLiberacao() { document.getElementById('modalLiberacao').clas
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); });
 });
-function selecionarDecisao(botao) { document.querySelectorAll('#modal .opcao').forEach(o => o.classList.remove('active')); botao.classList.add('active'); }
-function selecionarDecisaoLib(botao) { document.querySelectorAll('#modalLiberacao .opcao').forEach(o => o.classList.remove('active')); botao.classList.add('active'); }
+function selecionarDecisao(botao) {
+  document.querySelectorAll('#modal .opcao').forEach(o => o.classList.remove('active'));
+  botao.classList.add('active');
+  atualizarPlaceholderResposta('respostaAtestado', botao.classList.contains('rejeitar'));
+}
+function selecionarDecisaoLib(botao) {
+  document.querySelectorAll('#modalLiberacao .opcao').forEach(o => o.classList.remove('active'));
+  botao.classList.add('active');
+  atualizarPlaceholderResposta('respostaLiberacao', botao.classList.contains('rejeitar'));
+}
+function atualizarPlaceholderResposta(textareaId, obrigatorio) {
+  document.getElementById(textareaId).placeholder = obrigatorio
+    ? 'Descreva o motivo da rejeição (obrigatório)...'
+    : 'Digite sua resposta (opcional)...';
+}
 
 async function enviarDecisao(idItem, modalId, textareaId) {
   const item = document.getElementById(idItem);
   const aprovou = document.querySelector(`#${modalId} .opcao.aprovar.active`);
   const rejeitou = document.querySelector(`#${modalId} .opcao.rejeitar.active`);
   if (!aprovou && !rejeitou) { alert('Selecione Aprovar ou Rejeitar.'); return; }
+  const resposta = document.getElementById(textareaId).value.trim();
+  if (rejeitou && !resposta) { alert('Descreva o motivo da rejeição.'); return; }
   const usuario = getUsuarioLogado();
-  const resposta = document.getElementById(textareaId).value;
   const r = await apiFetch(`${API_URL}/ocorrencias/${item.dataset.idOcorrencia}/decidir`, {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ decisao: aprovou ? 'aprovar' : 'rejeitar', resposta, id_usuario_aprovador: usuario?.id_usuario })
@@ -169,3 +187,21 @@ function filtrarCards() {
   });
 }
 function sair() { window.location.href = '../../index.html'; }
+
+// Abre o anexo (atestado/declaração) enviado pelo responsável. Não usamos um
+// <a href> comum porque o arquivo fica atrás de login (token no header) —
+// então baixamos com apiFetch e abrimos o resultado como blob numa aba nova.
+async function abrirAnexo(evento, nomeArquivo) {
+  evento.preventDefault();
+  try {
+    const resposta = await apiFetch(`${window.location.origin}/uploads/${encodeURIComponent(nomeArquivo)}`);
+    if (!resposta.ok) throw new Error('Não foi possível abrir o arquivo.');
+    const blob = await resposta.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    // Libera a memória depois de um tempo — a aba já teve tempo de carregar o arquivo.
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (erro) {
+    alert(erro.message || 'Não foi possível abrir o arquivo.');
+  }
+}

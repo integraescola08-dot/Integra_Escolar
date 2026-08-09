@@ -31,6 +31,15 @@ label {
 }
 label span { color:var(--vermelho); }
 
+/* ── Marca de obrigatório no título de Observações/Descrição ── */
+.obs-section h2 #marcaOpcional {
+  font-size:14px;
+  font-weight:400;
+  color:var(--texto-principal);
+  opacity:.65;
+}
+.obs-section h2 #marcaObrigatoria { color:var(--vermelho); }
+
 select {
   border:1px solid var(--borda); border-radius:12px;
   padding:14px 18px; font-size:16px;
@@ -55,7 +64,25 @@ select:focus {
 .upload-content i { font-size:70px; color:var(--azul-principal); margin-bottom:18px; }
 .upload-content h3 { font-size:28px; color:var(--texto-principal); margin-bottom:8px; }
 .upload-content p  { font-size:16px; color:var(--texto-secundario); }
-#fileName { display:block; margin-top:14px; color:var(--azul-principal); font-size:15px; font-weight:bold; }
+
+/* ── Preview do arquivo selecionado ── */
+.upload-preview {
+  display:none; align-items:center; justify-content:center;
+  gap:16px; width:100%; padding:0 24px;
+}
+.upload-preview.ativo { display:flex; }
+.upload-preview i.fa-file-circle-check { font-size:44px; color:var(--verde); flex-shrink:0; }
+#fileName {
+  font-size:16px; font-weight:bold; color:var(--texto-principal);
+  word-break:break-all; max-width:360px;
+}
+#removerArquivo {
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  width:36px; height:36px; border-radius:50%; border:none;
+  background:var(--vermelho-claro); color:var(--vermelho);
+  font-size:16px; cursor:pointer; transition:.2s;
+}
+#removerArquivo:hover { background:var(--vermelho); color:var(--branco); transform:scale(1.08); }
 
 /* ── Textarea ── */
 textarea {

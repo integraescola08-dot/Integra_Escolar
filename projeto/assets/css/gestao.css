@@ -229,6 +229,16 @@
   border-radius: 12px;
   margin-top: 18px;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s;
+}
+.arquivo:hover {
+  background: var(--azul-medio);
+  color: var(--branco);
 }
 
 .obs {

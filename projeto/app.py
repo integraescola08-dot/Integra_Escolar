@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, abort
+from flask import Flask, send_from_directory, abort, g
 from flask_cors import CORS
 from pathlib import Path
 
@@ -8,6 +8,8 @@ from routes.alunos import alunos_bp
 from routes.ocorrencias import ocorrencias_bp
 from routes.horarios import horarios_bp
 from routes.admin import admin_bp
+from auth_utils import login_obrigatorio
+from db import fetch_one
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -55,7 +57,17 @@ def pages(filename):
     return send_from_directory(BASE_DIR / 'pages', filename)
 
 @app.route('/uploads/<path:filename>')
+@login_obrigatorio
 def uploaded_file(filename):
+    # Atestados/declarações contêm dado sensível (saúde), então não basta
+    # estar logado: só quem tem motivo legítimo pode abrir — a gestão, que
+    # precisa validar o documento, ou o próprio responsável que o enviou.
+    if g.usuario.get('perfil') != 'gestao':
+        ocorrencia = fetch_one('SELECT id_responsavel FROM Ocorrencia WHERE arquivo = %s', (filename,))
+        id_responsavel_logado = (g.usuario.get('pessoa') or {}).get('id')
+        eh_dono = ocorrencia and ocorrencia['id_responsavel'] == id_responsavel_logado
+        if not eh_dono:
+            abort(403)
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
