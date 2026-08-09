@@ -57,11 +57,16 @@ function configurarCalendarioLiberacao() {
   });
 }
 
-// Garante que o horário digitado seja um horário válido (00:00 a 23:59).
+// Garante que o horário digitado esteja dentro do horário de aula.
+// A escola funciona das 07:30 às 17:00 — não faz sentido liberar o
+// estudante fora desse intervalo, então o horário de saída precisa
+// estar dentro dele.
+const HORARIO_MIN_LIBERACAO = '07:30';
+const HORARIO_MAX_LIBERACAO = '17:00';
+
 function horarioValido(hora) {
   if (!/^\d{2}:\d{2}$/.test(hora)) return false;
-  const [h, m] = hora.split(':').map(Number);
-  return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+  return hora >= HORARIO_MIN_LIBERACAO && hora <= HORARIO_MAX_LIBERACAO;
 }
 
 function configurarHorarioLiberacao() {
@@ -71,7 +76,7 @@ function configurarHorarioLiberacao() {
   horaInput.addEventListener('input', function () {
     if (!horaInput.value) return;
     if (!horarioValido(horaInput.value)) {
-      alert('Digite um horário válido (00:00 a 23:59).');
+      alert('O horário de saída deve estar entre 07:30 e 17:00 (horário de aula).');
       horaInput.value = '';
     }
   });
@@ -121,7 +126,7 @@ document.getElementById('formLiberacao').addEventListener('submit', async functi
   }
 
   if (!horarioValido(hora)) {
-    alert('Digite um horário válido (00:00 a 23:59).');
+    alert('O horário de saída deve estar entre 07:30 e 17:00 (horário de aula).');
     return;
   }
 
