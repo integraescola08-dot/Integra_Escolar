@@ -81,6 +81,13 @@ textarea {
   align-items: flex-start;
 }
 
+.aviso-quem-busca {
+  margin-top: 8px;
+  color: var(--ambar);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .info-box i {
   color: var(--azul-principal);
   font-size: 20px;

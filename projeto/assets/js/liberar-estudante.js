@@ -3,6 +3,39 @@
 document.addEventListener('DOMContentLoaded', carregarAlunos);
 document.addEventListener('DOMContentLoaded', configurarCalendarioLiberacao);
 document.addEventListener('DOMContentLoaded', configurarHorarioLiberacao);
+document.addEventListener('DOMContentLoaded', configurarDescricaoObrigatoriaLiberacao);
+
+// Quando o motivo da liberação é "Outro", ou quando a pessoa que vai
+// buscar o estudante é "Outro", não dá pra saber do que se trata só
+// pela seleção — por isso o campo de observações passa a se chamar
+// "Descrição" e se torna obrigatório, igual já fazemos na tela de
+// enviar atestado.
+function configurarDescricaoObrigatoriaLiberacao() {
+  const motivoSelect = document.getElementById('motivo');
+  const quemBuscaSelect = document.getElementById('quemBusca');
+  const textarea = document.getElementById('observacoes');
+  const titulo = document.getElementById('tituloObservacoesLiberacao');
+  const marcaOpcional = document.getElementById('marcaOpcionalLiberacao');
+  const marcaObrigatoria = document.getElementById('marcaObrigatoriaLiberacao');
+  const avisoQuemBusca = document.getElementById('avisoQuemBusca');
+  if (!motivoSelect || !quemBuscaSelect || !textarea) return;
+
+  function atualizar() {
+    const motivoEhOutro = motivoSelect.value === 'Outro';
+    const quemBuscaEhOutro = quemBuscaSelect.value === 'Outro';
+    const precisaDescricao = motivoEhOutro || quemBuscaEhOutro;
+
+    textarea.required = precisaDescricao;
+    if (titulo) titulo.firstChild.textContent = precisaDescricao ? 'Descrição ' : 'Observações Adicionais ';
+    if (marcaOpcional) marcaOpcional.style.display = precisaDescricao ? 'none' : '';
+    if (marcaObrigatoria) marcaObrigatoria.style.display = precisaDescricao ? '' : 'none';
+    if (avisoQuemBusca) avisoQuemBusca.style.display = quemBuscaEhOutro ? '' : 'none';
+  }
+
+  motivoSelect.addEventListener('change', atualizar);
+  quemBuscaSelect.addEventListener('change', atualizar);
+  atualizar();
+}
 
 // Restringe o calendário de "Data da Liberação" ao ano atual e bloqueia
 // fins de semana (só é permitido escolher de segunda a sexta-feira).
@@ -72,10 +105,20 @@ document.getElementById('formLiberacao').addEventListener('submit', async functi
   const data = document.getElementById('dataLiberacao').value;
   const hora = document.getElementById('horaLiberacao').value;
   const motivo = document.getElementById('motivo').value;
+  const quemBusca = document.getElementById('quemBusca').value;
   const observacoes = document.getElementById('observacoes').value;
 
   if (!usuario?.pessoa?.id) { alert('Faça login novamente.'); return; }
-  if (!estudante || !data || !hora || !motivo) { alert('Preencha todos os campos obrigatórios.'); return; }
+  if (!estudante || !data || !hora || !motivo || !quemBusca) { alert('Preencha todos os campos obrigatórios.'); return; }
+
+  if (motivo === 'Outro' && !observacoes.trim()) {
+    alert('Para o motivo "Outro", preencha a descrição explicando do que se trata.');
+    return;
+  }
+  if (quemBusca === 'Outro' && !observacoes.trim()) {
+    alert('Informe na descrição quem irá buscar o estudante.');
+    return;
+  }
 
   if (!horarioValido(hora)) {
     alert('Digite um horário válido (00:00 a 23:59).');
@@ -103,7 +146,7 @@ document.getElementById('formLiberacao').addEventListener('submit', async functi
       hora_saida: hora,
       motivo,
       observacoes,
-      quem_busca: 'Responsável'
+      quem_busca: quemBusca
     })
   });
 

@@ -81,7 +81,19 @@
       </div>
 
       <div class="campo">
-        <label for="observacoes">Observações Adicionais (Opcional)</label>
+        <label for="quemBusca">Quem irá buscar o estudante <span>*</span></label>
+        <select id="quemBusca" required>
+          <option value="">Selecione uma opção</option>
+          <option value="Pai/Mãe">Pai/Mãe</option>
+          <option value="Parente do Responsável">Parente do Responsável (Tio, Tia, etc.)</option>
+          <option value="Motorista de Aplicativo">Motorista de Aplicativo</option>
+          <option value="Outro">Outro</option>
+        </select>
+        <p class="aviso-quem-busca" id="avisoQuemBusca" style="display:none">Informe na descrição abaixo quem irá buscar o estudante.</p>
+      </div>
+
+      <div class="campo">
+        <label for="observacoes" id="tituloObservacoesLiberacao">Observações Adicionais <span id="marcaOpcionalLiberacao">(Opcional)</span><span id="marcaObrigatoriaLiberacao" style="display:none">*</span></label>
         <textarea id="observacoes" placeholder="Adicione informações adicionais sobre a liberação..."></textarea>
       </div>
 
