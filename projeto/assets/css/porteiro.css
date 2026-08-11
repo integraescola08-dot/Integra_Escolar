@@ -9,73 +9,176 @@
   padding: 0 24px;
 }
 
-/* ── Título ── */
-.titulo {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+/* ── Bloco Topo Painel (Padrão Gestão) ── */
+.topo-painel {
+  background: var(--azul-principal);
+  color: var(--branco);
+  padding: 24px;
+  border-radius: 16px;
   margin-bottom: 24px;
-  gap: 20px;
 }
 
-.titulo-texto h1 {
-  color: var(--azul-escuro);
-  font-size: 32px;
-  margin-bottom: 6px;
+.topo-painel h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  margin-bottom: 5px;
 }
 
-.titulo-texto h1 i { color: var(--azul-principal); }
-
-.titulo-texto p {
-  color: var(--texto-secundario);
-  font-size: 15px;
+.topo-painel p {
+  opacity: 0.9;
+  font-size: 0.95rem;
+  margin: 0 0 20px 0;
+  font-weight: 400;
 }
 
-.contador-badge {
-  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
-  color: var(--branco);
-  border-radius: 16px;
-  padding: 14px 22px;
-  text-align: center;
-  min-width: 110px;
-  flex-shrink: 0;
+/* ── Cards Superiores ── */
+.topo-painel .cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-.contador-badge span {
+.topo-painel .card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.topo-painel .card small {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 6px;
   display: block;
-  font-size: 36px;
-  font-weight: 700;
-  line-height: 1;
+  font-weight: 400;
 }
 
-.contador-badge small {
-  font-size: 12px;
-  opacity: .85;
+.topo-painel .card h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--branco);
+  margin: 0;
 }
 
-/* ── Aviso info ── */
-.aviso-info {
+/* ── Barra de Pesquisa ── */
+.barra-pesquisa {
+  position: relative;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: var(--azul-claro);
-  border: 1px solid var(--borda);
-  border-radius: 14px;
-  padding: 16px 20px;
-  margin-bottom: 28px;
-  font-size: 14px;
-  color: var(--texto-principal);
-  line-height: 1.6;
+  align-items: center;
+  padding: 0 16px;
+  margin-bottom: 15px;
 }
 
-.aviso-info i {
+.barra-pesquisa i {
+  color: rgba(255, 255, 255, 0.7);
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.barra-pesquisa input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  padding: 12px 0;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.barra-pesquisa input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Filtros ── */
+.filtros {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filtros select,
+.filtros .campo-data input[type="date"] {
+  width: 100%;
+  background: var(--azul-principal);
+  border: 1px solid rgb(146, 155, 192);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  color-scheme: dark;
+  -webkit-text-fill-color: #fff;
+}
+
+.filtros .campo-data input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
+  opacity: 1;
+}
+
+.filtros .campo-data input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
+}
+
+.filtros select option {
+  background: var(--azul-escuro);
+  color: #fff;
+}
+
+/* ── Abas ── */
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.tabs .tab {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.tabs .tab[data-aba="aguardando"] {
+  padding: 12px 24px;
+  min-width: 170px;
+}
+
+.tabs .tab.active {
+  background: #fff;
   color: var(--azul-principal);
-  font-size: 18px;
-  margin-top: 2px;
-  flex-shrink: 0;
+  border-color: #fff;
+}
+
+.tabs .tab .badge {
+  background: #dc2626;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.tabs .tab:not(.active) .badge {
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
 }
 
 /* ── Lista ── */
@@ -249,7 +352,7 @@
   justify-content: center;
   gap: 8px;
   transition: .25s;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
 }
 
 .btn-confirmar-saida:hover {
@@ -267,9 +370,16 @@
 
 .sem-registros i {
   font-size: 56px;
-  color: var(--verde);
-  margin-bottom: 16px;
-  display: block;
+  color: #fff;
+  background: #dc2626;
+  width: 72px;
+  height: 72px;
+  line-height: 72px;
+  margin: 0 auto 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .sem-registros p { font-size: 16px; }
@@ -335,7 +445,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: .25s;
-  font-family: Arial, sans-serif;
+  font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -357,8 +467,9 @@
 
 /* ── Responsivo ── */
 @media(max-width: 768px) {
-  .titulo { flex-direction: column; }
-  .contador-badge { width: 100%; }
+  .topo-painel .cards { grid-template-columns: 1fr; }
+  .filtros { grid-template-columns: 1fr; }
+  .tabs { flex-direction: column; }
   .detalhes { gap: 8px; }
   .modal-buttons { flex-direction: column; }
 }

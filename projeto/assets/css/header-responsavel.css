@@ -1,0 +1,296 @@
+
+
+/* ── Reset básico ── */
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; }
+
+body {
+    background:var(--fundo-pagina);
+    min-height:100vh;
+    opacity:1;
+    transform:translateX(0);
+    transition:opacity .32s ease, transform .32s ease;
+    animation:entradaDePagina .4s ease both;
+}
+body.fade-out { opacity:0; }
+
+/* Saída: usada pela função ir() antes de navegar para outra página */
+body.sai-esquerda{ opacity:0; transform:translateX(-40px); }
+body.sai-direita { opacity:0; transform:translateX(40px); }
+
+/* Entrada: roda automaticamente assim que qualquer página termina de carregar */
+@keyframes entradaDePagina{
+    from{ opacity:0; transform:translateY(14px); }
+    to  { opacity:1; transform:translateY(0); }
+}
+
+/* ── Header ── */
+header {
+  background: var(--azul-principal);
+  height: 280px;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0,0,0,.2);
+}
+
+/* ── Menu de Acesso Rápido ── */
+.quick-menu{
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:60px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:90px;
+    background:rgba(255,255,255,.08);
+    backdrop-filter:blur(6px);
+    border-top:1px solid rgba(255,255,255,.18);
+}
+
+.quick-item{
+
+    height:100%;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 25px;
+    color:rgba(255,255,255,.75);
+    text-decoration:none;
+    font-size:17px;
+    font-weight:600;
+    transition:.25s;
+    position:relative;
+}
+
+.quick-item i{
+    font-size:17px;
+}
+
+.quick-item:hover{
+
+    color:var(--branco);
+
+}
+
+.quick-item.active{
+
+    color:var(--branco);
+
+}
+
+.quick-item.active::after{
+
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:80%;
+    height:4px;
+    border-radius:20px;
+    background:var(--branco);
+
+}
+/* Botão Voltar (telas que não fazem parte da esteira, ex.: enviar-atestado, liberar-estudante) */
+.btn-voltar{
+    position:absolute;
+    top:30px;
+    left:30px;
+    width:42px;
+    height:42px;
+    border:none;
+    border-radius:50%;
+    background:rgba(255,255,255,.12);
+    color:var(--branco);
+    font-size:18px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.2s;
+    z-index:5;
+}
+.btn-voltar:hover{ background:rgba(255,255,255,.22); }
+
+/* Botão Voltar inline, ao lado do título da seção (enviar-atestado, liberar-estudante) */
+.titulo-com-voltar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+.btn-voltar-inline{
+    flex-shrink:0;
+    width:38px;
+    height:38px;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--azul-claro), #d3e8fb);
+    color:var(--azul-principal);
+    font-size:16px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 2px 6px rgba(26,86,160,.18);
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
+}
+.btn-voltar-inline i{ transition:transform .2s ease; }
+.btn-voltar-inline:hover{
+    background:linear-gradient(135deg, var(--azul-medio), var(--azul-principal));
+    color:var(--branco);
+    box-shadow:0 4px 10px rgba(26,86,160,.3);
+    transform:translateY(-1px);
+}
+.btn-voltar-inline:hover i{ transform:translateX(-2px); }
+.btn-voltar-inline:active{ transform:translateY(0) scale(.94); }
+
+/* Logo centralizada */
+.logo {
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  transform: translate(-50%, -50%);
+}
+.logo img { width: 160px; height: auto; }
+
+/* Barra superior com usuário e menu */
+.top-content {
+  max-width: 1200px;
+  margin: auto;
+  padding: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--branco);
+}
+
+/* Label de perfil do usuário */
+.user {
+  margin-top: 55px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--branco);
+}
+
+/* Ícone hamburguer */
+.menu {
+  margin-top: 55px;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--branco);
+  transition: opacity .2s;
+}
+.menu:hover { opacity: .75; }
+
+/* Botões de ação do cabeçalho (Contato e Ajuda / Sobre) — substituem o
+   menu hambúrguer nas telas do responsável. */
+.header-actions {
+  margin-top: 55px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  color: var(--branco);
+  font-size: 19px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s, transform .2s;
+}
+.icon-btn:hover { background: rgba(255,255,255,.22); transform: translateY(-1px); }
+.icon-btn img { width: 20px; height: 20px; object-fit: contain; }
+
+/* ── Dropdown ── */
+.dropdown-menu {
+  position: absolute;
+  top: 125px;
+  right: 40px;
+  width: 230px;
+  background: var(--branco);
+  border-radius: 14px;
+  box-shadow: 0 5px 20px rgba(0,0,0,.15);
+  overflow: hidden;
+  display: none;
+  animation: aparecer .25s ease;
+  z-index: 999;
+}
+.dropdown-menu.open { display: block; }
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  cursor: pointer;
+  transition: background .2s;
+  color: var(--texto-principal);
+  font-size: 15px;
+}
+.menu-item:hover { background: var(--azul-claro); }
+.menu-item i { font-size: 17px; color: var(--azul-principal); }
+.menu-item .menu-icon-casa { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+
+/* Item Sair */
+.menu-item.sair { color: var(--vermelho); }
+.menu-item.sair i { color: var(--vermelho); }
+
+@keyframes aparecer {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Esteira deslizante (Tela Inicial / Histórico / Configurações) ── */
+.slide-viewport{
+    width:100%;
+    overflow:hidden;         /* esconde os painéis que estão fora da tela */
+}
+
+.slide-track{
+    display:flex;
+    width:600%;              /* 6 painéis x 100% cada */
+    transition:transform .45s cubic-bezier(.65,0,.35,1);
+}
+
+.slide-panel{
+    width:16.6667%;
+    flex-shrink:0;
+    min-height:calc(100vh - 280px); /* 280px = altura do header */
+}
+
+.panel-iframe{
+    width:100%;
+    height:calc(100vh - 280px);
+    border:0;
+    display:block;
+}
+
+.slide-track[data-active="home"]           { transform:translateX(0%); }
+.slide-track[data-active="historico"]      { transform:translateX(-16.6667%); }
+.slide-track[data-active="configuracoes"]  { transform:translateX(-33.3333%); }
+.slide-track[data-active="meus-estudantes"]{ transform:translateX(-50%); }
+.slide-track[data-active="contato-ajuda"]  { transform:translateX(-66.6667%); }
+.slide-track[data-active="sobre"]          { transform:translateX(-83.3333%); }
+
+@media(max-width:768px){
+  .slide-panel{ min-height:calc(100vh - 190px); }
+  .panel-iframe{ height:calc(100vh - 190px); }
+}
+
+/* ── Responsivo ── */
+@media(max-width:768px) {
+  header { height: 190px; }
+  .user, .menu { margin-top: 90px; }
+  .dropdown-menu { right: 20px; width: 200px; }
+  .logo img { width: 130px; }
+  .btn-voltar { top: 20px; left: 16px; width: 36px; height: 36px; font-size: 16px; }
+}

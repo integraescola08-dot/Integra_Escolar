@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="icon" type="image/x-icon" href="../../assets/img/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/img/favicon-32.png">
-  <script>window.PERFIL_ESPERADO = 'administrador';</script>
-  <script src="../../assets/js/guarda-sessao.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Integra Escolar | Administração</title>
@@ -31,6 +27,7 @@
     <article><b id="n-alunos">0</b><span>Alunos</span></article>
     <article><b id="n-professores">0</b><span>Professores</span></article>
     <article><b id="n-coordenadores">0</b><span>Coordenadores</span></article>
+    <article><b id="n-porteiros">0</b><span>Porteiros</span></article>
     <article><b id="n-turmas">0</b><span>Turmas</span></article>
   </section>
 
@@ -39,14 +36,19 @@
     <button data-tab="alunos">Alunos</button>
     <button data-tab="professores">Professores</button>
     <button data-tab="coordenadores">Coordenadores</button>
+    <button data-tab="porteiros">Porteiros</button>
   </nav>
 
   <section id="turmas" class="painel ativo">
     <h2>Cadastrar turma</h2>
-    <form id="form-turma">
-      <input name="codigo" placeholder="Código: 3TDSA" maxlength="10" required>
-      <input name="descricao" placeholder="Descrição" required>
-      <button>Cadastrar</button>
+    <p class="ajuda-form">Cadastre o código da turma e importe a grade no modelo .xlsx. As matérias serão identificadas automaticamente; intervalos, almoço e saída não viram aulas.</p>
+    <form id="form-turma" enctype="multipart/form-data">
+      <input name="codigo" placeholder="Código: 2MKA" maxlength="10" required>
+      <label class="arquivo-grade">
+        <span>Planilha de horários (.xlsx)</span>
+        <input name="planilha" type="file" accept=".xlsx" required>
+      </label>
+      <button>Cadastrar turma e importar grade</button>
     </form>
     <div id="lista-turmas" class="lista"></div>
   </section>
@@ -54,7 +56,7 @@
   <section id="alunos" class="painel">
     <h2>Cadastrar aluno</h2>
     <form id="form-aluno">
-      <input name="matricula" placeholder="Matrícula (opcional, 7 dígitos)" inputmode="numeric" maxlength="7">
+      <input name="matricula" placeholder="Matrícula (12 dígitos)" inputmode="numeric" minlength="12" maxlength="12" pattern="[0-9]{12}" required>
       <input name="nome" placeholder="Nome completo" required>
       <select name="turma" required>
         <option value="">Selecione a turma</option>
@@ -70,6 +72,9 @@
       <input name="nome" placeholder="Nome completo" required>
       <input name="email" type="email" placeholder="Email" required>
       <input name="telefone" placeholder="Telefone">
+      <select name="id_materia" required>
+        <option value="">Selecione a matéria</option>
+      </select>
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
       <button>Cadastrar</button>
     </form>
@@ -86,6 +91,19 @@
       <button>Cadastrar</button>
     </form>
     <div id="lista-coordenadores" class="lista"></div>
+  </section>
+
+
+  <section id="porteiros" class="painel">
+    <h2>Cadastrar porteiro(a)</h2>
+    <form id="form-porteiro">
+      <input name="nome" placeholder="Nome completo" required>
+      <input name="email" type="email" placeholder="Email" required>
+      <input name="telefone" placeholder="Telefone">
+      <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
+      <button>Cadastrar</button>
+    </form>
+    <div id="lista-porteiros" class="lista"></div>
   </section>
 
   <div id="mensagem" role="status"></div>

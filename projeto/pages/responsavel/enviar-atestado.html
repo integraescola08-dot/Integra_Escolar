@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="icon" type="image/x-icon" href="../../assets/img/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/img/favicon-32.png">
-  <script>window.PERFIL_ESPERADO = 'responsavel';</script>
-  <script src="../../assets/js/guarda-sessao.js"></script>
+  <link rel="icon" type="image/png" href="/assets/img/Logo%20casinha-%20endere%C3%A7o.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Integra Escolar | Enviar Atestado</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../../assets/css/paleta.css">
-  <link rel="stylesheet" href="../../assets/css/header.css">
+  <link rel="stylesheet" href="../../assets/css/header-responsavel.css">
   <link rel="stylesheet" href="../../assets/css/enviar-atestado.css">
 </head>
 <body>
@@ -61,13 +58,29 @@
         <label for="nomeEstudante">Tipo de Declaração <span>*</span></label>
         <select id="tipoDeclaracao" required>
           <option value="" disabled selected>Selecione a declaração...</option>
-          <option value="1">Atestado Médico</option>
-          <option value="2">Declaração de comparecimento à consulta médica</option>
-          <option value="3">Declaração dos pais ou responsávels</option>
+          <option value="Atestado Médico">Atestado Médico</option>
+          <option value="Declaração de comparecimento à consulta médica">Declaração de comparecimento à consulta médica</option>
+          <option value="Declaração dos pais ou responsáveis">Declaração dos pais ou responsáveis</option>
           <option value="outros">Outros</option>
         </select>
       </div>
     </section>
+
+    <section class="select-section">
+      <h2>Período da Justificativa</h2>
+      <div class="linha-datas">
+        <div class="campo">
+          <label for="dataInicioAtestado">Data inicial <span>*</span></label>
+          <input type="date" id="dataInicioAtestado" required>
+        </div>
+        <div class="campo">
+          <label for="dataFimAtestado">Data final <span>*</span></label>
+          <input type="date" id="dataFimAtestado" required>
+        </div>
+      </div>
+      <p class="ajuda-periodo">Informe o período coberto pelo atestado ou declaração.</p>
+    </section>
+
     <section class="upload-section">
       <h2>Anexar Documento</h2>
       <label class="upload-box" id="uploadBox">

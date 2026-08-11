@@ -1,63 +1,125 @@
-/* Integra Escolar — Porteiro conectado ao Flask */
-let cardSelecionado = null;
+let liberacaoSelecionada = null;
+let LIBERACOES = [];
 
-document.addEventListener('DOMContentLoaded', carregarLiberados);
+function escaparHtml(valor) {
+  return String(valor ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
-async function carregarLiberados() {
-  const r = await apiFetch(`${API_URL}/ocorrencias?liberadas=1`);
-  if (!r.ok) { alert('Erro ao carregar liberações. Verifique o terminal do Flask.'); return; }
-  const liberacoes = await r.json();
-  const lista = document.getElementById('listaAlunos');
-  lista.innerHTML = '';
+function textoMotivo(descricao) {
+  const texto = String(descricao || '').trim();
+  return texto || 'Motivo não informado';
+}
 
-  liberacoes.forEach(o => {
-    const saiu = !!o.saida_confirmada;
-    const card = document.createElement('div');
-    card.className = 'card-aluno';
-    card.dataset.status = saiu ? 'saiu' : 'aguardando';
-    card.dataset.idOcorrencia = o.id_ocorrencia;
-    card.innerHTML = `
+function horaDataSaida(dataHora) {
+  if (!dataHora) return '';
+  const parte = String(dataHora).split(' ')[1] || '';
+  return parte.slice(0, 5);
+}
+
+function renderizarLiberacao(o) {
+  const saiu = Boolean(o.saida_confirmada);
+  const status = saiu ? 'saiu' : 'aguardando';
+  const horaConfirmada = horaDataSaida(o.data_saida_confirmada);
+  const topoDireita = saiu
+    ? `Saiu às ${escaparHtml(horaConfirmada || '—')}`
+    : `Solicitada em ${escaparHtml(formatarDataBR(o.data_inicio_oc))}`;
+
+  return `
+    <div class="card-aluno" data-status="${status}">
       <div class="card-topo">
-        <div class="status-tag ${saiu ? 'tag-saiu' : 'tag-aguardando'}">${saiu ? '<i class="fa-solid fa-circle-check"></i> Saída confirmada' : '<i class="fa-regular fa-clock"></i> Aguardando saída'}</div>
-        <div class="hora-aprovacao">${saiu ? 'Saída confirmada' : 'Aprovado pela gestão'}</div>
+        <div class="status-tag ${saiu ? 'tag-saiu' : 'tag-aguardando'}">
+          <i class="${saiu ? 'fa-solid fa-circle-check' : 'fa-regular fa-clock'}"></i>
+          ${saiu ? 'Saída confirmada' : 'Aguardando saída'}
+        </div>
+        <div class="hora-aprovacao">${topoDireita}</div>
       </div>
+
       <div class="card-corpo">
         <div class="aluno-info">
           <div class="avatar ${saiu ? 'avatar-saiu' : ''}"><i class="fa-regular fa-user"></i></div>
-          <div><h2>${escapeHtml(o.aluno_nome || 'Aluno')}</h2><div class="detalhes">
-            <span><i class="fa-solid fa-users"></i> ${escapeHtml(o.aluno_turma || '')}</span>
-            <span><i class="fa-regular fa-clock"></i> Saída: ${formatarHora(o.hora_saida)}</span>
-            <span><i class="fa-solid fa-circle-info"></i> ${escapeHtml(o.descricao || '')}</span>
-          </div></div>
+          <div>
+            <h2>${escaparHtml(o.aluno_nome || 'Aluno')}</h2>
+            <div class="detalhes">
+              <span><i class="fa-solid fa-users"></i> ${escaparHtml(o.aluno_turma || 'Turma não informada')}</span>
+              <span><i class="fa-regular fa-clock"></i> Saída: ${escaparHtml(formatarHora(o.hora_saida) || '—')}</span>
+              <span><i class="fa-solid fa-circle-info"></i> ${escaparHtml(textoMotivo(o.descricao))}</span>
+            </div>
+          </div>
         </div>
-        <div class="quem-busca"><i class="fa-regular fa-user"></i><div>Quem irá buscar<br><strong>${escapeHtml(o.quem_busca || 'Responsável')}</strong></div></div>
+
+        <div class="quem-busca">
+          <i class="fa-regular fa-user"></i>
+          <div>
+            <small>Quem irá buscar</small>
+            <strong>${escaparHtml(o.quem_busca || 'Responsável')}</strong>
+          </div>
+        </div>
       </div>
-      ${saiu ? '' : '<div class="card-acoes"><button class="btn-confirmar-saida" onclick="confirmarSaida(this)"><i class="fa-solid fa-check"></i> Confirmar Saída</button></div>'}`;
-    lista.appendChild(card);
-  });
-  atualizarContador();
+
+      ${saiu ? '' : `
+      <div class="card-acoes">
+        <button class="btn-confirmar-saida" onclick="confirmarSaida(${o.id_ocorrencia})">
+          <i class="fa-solid fa-check"></i> Confirmar Saída
+        </button>
+      </div>`}
+    </div>`;
 }
 
-function atualizarContador() {
-  const aguardando = document.querySelectorAll('.card-aluno[data-status="aguardando"]').length;
-  document.getElementById('totalLiberados').textContent = aguardando;
-  document.getElementById('semRegistros').style.display = document.querySelectorAll('.card-aluno').length === 0 ? 'block' : 'none';
+async function carregarLiberacoes() {
+  const lista = document.getElementById('listaAlunos');
+  const vazio = document.getElementById('semRegistros');
+  try {
+    const resposta = await apiFetch(`${API_URL}/ocorrencias?categoria=Liberacao&liberadas=1`);
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível carregar as liberações.');
+
+    const ordenadas = [...dados].sort((a, b) => Number(a.saida_confirmada) - Number(b.saida_confirmada));
+    LIBERACOES = ordenadas;
+    const aguardando = ordenadas.filter(o => !o.saida_confirmada).length;
+    document.getElementById('totalLiberados').textContent = aguardando;
+    lista.innerHTML = ordenadas.map(renderizarLiberacao).join('');
+    vazio.style.display = ordenadas.length ? 'none' : 'block';
+  } catch (erro) {
+    console.error(erro);
+    lista.innerHTML = `<p class="carregando-porteiro">${escaparHtml(erro.message)}</p>`;
+    vazio.style.display = 'none';
+  }
 }
-function confirmarSaida(botao) {
-  const card = botao.closest('.card-aluno');
-  const nome = card.querySelector('h2').textContent.trim();
-  const quem = card.querySelector('.quem-busca strong').textContent.trim();
-  cardSelecionado = card;
-  document.getElementById('textoConfirmar').innerHTML = `Confirmar saída de <strong>${escapeHtml(nome)}</strong>?<br><br><span style="color:var(--texto-secundario);font-size:14px;">Sendo buscado por: <strong style="color:var(--texto-principal)">${escapeHtml(quem)}</strong></span>`;
+
+function confirmarSaida(idOcorrencia) {
+  liberacaoSelecionada = idOcorrencia;
+  const registro = LIBERACOES.find(o => o.id_ocorrencia === idOcorrencia);
+  const nomeAluno = registro?.aluno_nome || 'este aluno';
+  document.getElementById('textoConfirmar').textContent = `Confirmar a saída de ${nomeAluno}?`;
   document.getElementById('modalConfirmar').classList.add('show');
 }
-async function executarConfirmacao() {
-  if (!cardSelecionado) return;
-  const r = await apiFetch(`${API_URL}/ocorrencias/${cardSelecionado.dataset.idOcorrencia}/confirmar-saida`, { method: 'PUT' });
-  const json = await r.json();
-  if (!r.ok) { alert(json.erro || 'Erro ao confirmar saída.'); return; }
-  fecharModal();
-  await carregarLiberados();
+
+function fecharModal() {
+  liberacaoSelecionada = null;
+  document.getElementById('modalConfirmar').classList.remove('show');
 }
-function fecharModal() { document.getElementById('modalConfirmar').classList.remove('show'); cardSelecionado = null; }
-document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.addEventListener('click', e => { if (e.target === overlay) fecharModal(); }));
+
+async function executarConfirmacao() {
+  if (!liberacaoSelecionada) return;
+  const id = liberacaoSelecionada;
+  try {
+    const resposta = await apiFetch(`${API_URL}/ocorrencias/${id}/confirmar-saida`, { method: 'PUT' });
+    const dados = await resposta.json();
+    if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível confirmar a saída.');
+    fecharModal();
+    await carregarLiberacoes();
+  } catch (erro) {
+    alert(erro.message);
+  }
+}
+
+document.getElementById('modalConfirmar').addEventListener('click', e => {
+  if (e.target === e.currentTarget) fecharModal();
+});
+
+carregarLiberacoes();

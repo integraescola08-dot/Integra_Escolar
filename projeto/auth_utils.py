@@ -27,10 +27,10 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify, g
 
-# IMPORTANTE: defina uma chave forte e secreta em produção, via variável de
-# ambiente JWT_SECRET no arquivo .env. O valor abaixo é só um fallback para
-# desenvolvimento local — nunca use em produção.
-SECRET = os.getenv('JWT_SECRET', 'chave-temporaria-troque-no-env')
+# A aplicação não inicia com uma chave JWT previsível. Configure JWT_SECRET no .env.
+SECRET = os.getenv('JWT_SECRET')
+if not SECRET:
+    raise RuntimeError('JWT_SECRET não configurada. Copie .env.example para .env e defina uma chave forte.')
 ALGORITMO = 'HS256'
 HORAS_DE_VALIDADE = 8
 
@@ -76,7 +76,7 @@ def login_obrigatorio(f):
 
 def papel_obrigatorio(*papeis_permitidos):
     """Como login_obrigatorio, mas também exige que o perfil do usuário
-    (responsavel / professor / gestao / porteiro) esteja entre os permitidos.
+    (responsavel / professor / gestao / porteiro / administrador) esteja entre os permitidos.
     Uso: @papel_obrigatorio('gestao')  ou  @papel_obrigatorio('gestao', 'porteiro')"""
     def decorator(f):
         @wraps(f)

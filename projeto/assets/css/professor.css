@@ -248,3 +248,28 @@
 @media(max-width:480px){
   .filtros { grid-template-columns: 1fr; }
 }
+
+/* Ação de saída visível; substitui o antigo menu hambúrguer. */
+.btn-sair-professor {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 600;
+}
+.btn-sair-professor:hover { opacity: .75; }
+
+.subtitulo-professor { margin: 6px 0 18px; color: rgba(255,255,255,.82); }
+.carregando { text-align:center; color:var(--texto-secundario); padding:40px 0; }
+.grade-info { display:flex; flex-wrap:wrap; gap:8px 18px; }
+.grade-info span { display:inline-flex; align-items:center; gap:6px; }
+.origem-atestado {
+  display:flex; flex-direction:column; gap:4px; margin:14px 0;
+  padding:12px 14px; background:var(--azul-claro); border-radius:10px;
+  color:var(--azul-principal); font-size:14px;
+}
+.pergunta-professor { margin: 16px 0 10px; font-weight: 600; color: var(--texto-principal); }

@@ -3,7 +3,7 @@ let itemAtualAtestado = null;
 let itemAtualLiberacao = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await carregarPainelGestao();
+  await Promise.all([carregarTurmasGestao(), carregarPainelGestao()]);
   atualizarContadores();
 });
 
@@ -30,6 +30,30 @@ async function respostaJsonSegura(resposta) {
   }
 
   return dados;
+}
+
+async function carregarTurmasGestao() {
+  const select = document.getElementById('turma');
+  if (!select) return;
+
+  try {
+    const resposta = await apiFetch(`${API_URL}/alunos/turmas`);
+    const turmas = await respostaJsonSegura(resposta);
+
+    select.innerHTML = '<option value="">Todas as turmas</option>';
+    turmas.forEach(item => {
+      const codigo = item.codigo;
+      if (!codigo) return;
+      const option = document.createElement('option');
+      option.value = codigo;
+      option.textContent = codigo;
+      select.appendChild(option);
+    });
+  } catch (erro) {
+    console.error('Não foi possível carregar as turmas:', erro);
+    // O painel continua funcionando mesmo se o filtro de turmas falhar.
+    select.innerHTML = '<option value="">Todas as turmas</option>';
+  }
 }
 
 async function carregarPainelGestao() {
@@ -158,7 +182,7 @@ async function enviarDecisao(idItem, modalId, textareaId) {
   });
   const json = await r.json();
   if (!r.ok) { alert(json.erro || 'Erro ao salvar decisão.'); return; }
-  await carregarPainelGestao();
+  await Promise.all([carregarTurmasGestao(), carregarPainelGestao()]);
   atualizarContadores();
 }
 async function confirmarDecisaoAtestado() { await enviarDecisao(itemAtualAtestado, 'modal', 'respostaAtestado'); fecharModal(); }

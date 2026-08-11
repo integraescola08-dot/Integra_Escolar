@@ -45,7 +45,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       professor: 'pages/professor/controle-faltas.html',
       porteiro: 'pages/porteiro/porteiro.html',
       gestao: 'pages/gestao/painel.html',
-      administrador: 'pages/administrador/admin-index.html'
+      administrador: 'pages/Administrador/admin-index.html'
     };
 
     const destino = destinos[resultado.usuario.perfil];

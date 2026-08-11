@@ -21,7 +21,7 @@ telefoneInput.addEventListener('input', () => {
 });
 
 matriculaInput.addEventListener('input', () => {
-  matriculaInput.value = somenteNumeros(matriculaInput.value).slice(0, 7);
+  matriculaInput.value = somenteNumeros(matriculaInput.value).slice(0, 12);
 });
 
 document.querySelectorAll('.toggle-password').forEach((botao) => {
@@ -42,6 +42,11 @@ function exibirMensagem(texto, tipo) {
 document.getElementById('cadastroForm').addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
+  if (matriculaInput.value.trim().length !== 12) {
+    alert('A matrícula deve conter exatamente 12 dígitos.');
+    return;
+  }
+
   const dados = {
     nome: document.getElementById('nome').value.trim(),
     cpf: somenteNumeros(cpfInput.value),
@@ -59,11 +64,6 @@ document.getElementById('cadastroForm').addEventListener('submit', async (evento
 
   if (dados.cpf.length !== 11 || dados.telefone.length < 10) {
     exibirMensagem('Confira o CPF e o telefone informados.', 'erro');
-    return;
-  }
-
-  if (dados.matricula.length !== 7) {
-    exibirMensagem('A matrícula deve ter exatamente 7 dígitos.', 'erro');
     return;
   }
 

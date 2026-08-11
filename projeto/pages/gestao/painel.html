@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <link rel="icon" type="image/x-icon" href="../../assets/img/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/img/favicon-32.png">
-  <script>window.PERFIL_ESPERADO = 'gestao';</script>
-  <script src="../../assets/js/guarda-sessao.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Integra Escolar | Gestão</title>
@@ -24,32 +20,18 @@
         <i class="fa-solid fa-users-gear"></i>
         <span>Gestão</span>
       </div>
-  <div class="header-actions">
-        <button class="icon-btn" onclick="irPainel('contato-ajuda')" title="Contato e Ajuda" aria-label="Contato e Ajuda">
-          <i class="fa-regular fa-circle-question"></i>
-        </button>
-        <button class="icon-btn" onclick="irPainel('sobre')" title="Sobre o Integra Escolar" aria-label="Sobre o Integra Escolar">
-          <img src="../../assets/img/logo-branca.png" alt="">
-        </button>
+      <div class="menu" onclick="abrirMenu()">
+        <i class="fa-solid fa-bars"></i>
       </div>
     </div>
-        <nav class="quick-menu">
-
-        <a href="#" class="quick-item active" data-panel="home" onclick="irPainel('home',this); return false;">
-            <i class="fa-solid fa-house"></i>
-            <span>Tela Inicial</span>
-        </a>
-
-        <a href="#" class="quick-item" data-panel="historico" onclick="irPainel('historico',this); return false;">
-            <i class="fa-solid fa-clock-rotate-left"></i>
-            <span>Histórico</span>
-        </a>
-
-        <a href="#" class="quick-item" data-panel="configuracoes" onclick="irPainel('configuracoes',this); return false;">
-            <i class="fa-solid fa-gear"></i>
-            <span>Configurações</span>
-        </a>
-    </nav>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Meu Perfil</span></div>
+      <div class="menu-item"><i class="fa-regular fa-clock"></i><span>Histórico</span></div>
+      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
+      <div class="menu-item sair" onclick="sair()">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      </div>
+    </div>
   </header>
 
   <div class="container">
@@ -79,13 +61,7 @@
         <!-- Filtros -->
         <div class="filtros">
           <select id="turma">
-            <option value="">Turma</option>
-            <option>1º MKT A</option><option>1º MKT B</option>
-            <option>1º TDS A</option><option>1º TDS B</option>
-            <option>2º MKT A</option><option>2º MKT B</option>
-            <option>2º TDS A</option><option>2º TDS B</option>
-            <option>3º MKT A</option><option>3º MKT B</option>
-            <option>3º TDS A</option><option>3º TDS B</option>
+            <option value="">Todas as turmas</option>
           </select>
           <select id="status">
             <option value="todos">Todos</option>

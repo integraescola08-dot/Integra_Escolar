@@ -112,38 +112,6 @@ header {
 }
 .btn-voltar:hover{ background:rgba(255,255,255,.22); }
 
-/* Botão Voltar inline, ao lado do título da seção (enviar-atestado, liberar-estudante) */
-.titulo-com-voltar{
-    display:flex;
-    align-items:center;
-    gap:12px;
-}
-.btn-voltar-inline{
-    flex-shrink:0;
-    width:38px;
-    height:38px;
-    border:none;
-    border-radius:50%;
-    background:linear-gradient(135deg, var(--azul-claro), #d3e8fb);
-    color:var(--azul-principal);
-    font-size:16px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    box-shadow:0 2px 6px rgba(26,86,160,.18);
-    transition:transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
-}
-.btn-voltar-inline i{ transition:transform .2s ease; }
-.btn-voltar-inline:hover{
-    background:linear-gradient(135deg, var(--azul-medio), var(--azul-principal));
-    color:var(--branco);
-    box-shadow:0 4px 10px rgba(26,86,160,.3);
-    transform:translateY(-1px);
-}
-.btn-voltar-inline:hover i{ transform:translateX(-2px); }
-.btn-voltar-inline:active{ transform:translateY(0) scale(.94); }
-
 /* Logo centralizada */
 .logo {
   position: absolute;
@@ -184,31 +152,6 @@ header {
   transition: opacity .2s;
 }
 .menu:hover { opacity: .75; }
-
-/* Botões de ação do cabeçalho (Contato e Ajuda / Sobre) — substituem o
-   menu hambúrguer nas telas do responsável. */
-.header-actions {
-  margin-top: 55px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.icon-btn {
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255,255,255,.12);
-  color: var(--branco);
-  font-size: 19px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background .2s, transform .2s;
-}
-.icon-btn:hover { background: rgba(255,255,255,.22); transform: translateY(-1px); }
-.icon-btn img { width: 20px; height: 20px; object-fit: contain; }
 
 /* ── Dropdown ── */
 .dropdown-menu {

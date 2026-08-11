@@ -1,171 +1,146 @@
-/* Integra Escolar — Liberar Estudante conectado ao Flask */
+/* Integra Escolar — Solicitação de liberação */
 
-document.addEventListener('DOMContentLoaded', carregarAlunos);
-document.addEventListener('DOMContentLoaded', configurarCalendarioLiberacao);
-document.addEventListener('DOMContentLoaded', configurarHorarioLiberacao);
-document.addEventListener('DOMContentLoaded', configurarDescricaoObrigatoriaLiberacao);
+let alunosPorMatricula = {};
 
-// Quando o motivo da liberação é "Outro", ou quando a pessoa que vai
-// buscar o estudante é "Outro", não dá pra saber do que se trata só
-// pela seleção — por isso o campo de observações passa a se chamar
-// "Descrição" e se torna obrigatório, igual já fazemos na tela de
-// enviar atestado.
+document.addEventListener('DOMContentLoaded', () => {
+  carregarAlunos();
+  configurarCalendarioLiberacao();
+  configurarDescricaoObrigatoriaLiberacao();
+});
+
 function configurarDescricaoObrigatoriaLiberacao() {
-  const motivoSelect = document.getElementById('motivo');
-  const quemBuscaSelect = document.getElementById('quemBusca');
-  const textarea = document.getElementById('observacoes');
+  const motivo = document.getElementById('motivo');
+  const quem = document.getElementById('quemBusca');
+  const obs = document.getElementById('observacoes');
   const titulo = document.getElementById('tituloObservacoesLiberacao');
-  const marcaOpcional = document.getElementById('marcaOpcionalLiberacao');
-  const marcaObrigatoria = document.getElementById('marcaObrigatoriaLiberacao');
-  const avisoQuemBusca = document.getElementById('avisoQuemBusca');
-  if (!motivoSelect || !quemBuscaSelect || !textarea) return;
+  const opcional = document.getElementById('marcaOpcionalLiberacao');
+  const obrigatoria = document.getElementById('marcaObrigatoriaLiberacao');
+  const aviso = document.getElementById('avisoQuemBusca');
+  if (!motivo || !quem || !obs) return;
 
   function atualizar() {
-    const motivoEhOutro = motivoSelect.value === 'Outro';
-    const quemBuscaEhOutro = quemBuscaSelect.value === 'Outro';
-    const precisaDescricao = motivoEhOutro || quemBuscaEhOutro;
-
-    textarea.required = precisaDescricao;
-    if (titulo) titulo.firstChild.textContent = precisaDescricao ? 'Descrição ' : 'Observações Adicionais ';
-    if (marcaOpcional) marcaOpcional.style.display = precisaDescricao ? 'none' : '';
-    if (marcaObrigatoria) marcaObrigatoria.style.display = precisaDescricao ? '' : 'none';
-    if (avisoQuemBusca) avisoQuemBusca.style.display = quemBuscaEhOutro ? '' : 'none';
+    const precisa = motivo.value === 'Outro' || quem.value === 'Outro';
+    obs.required = precisa;
+    if (titulo) titulo.firstChild.textContent = precisa ? 'Descrição ' : 'Observações Adicionais ';
+    if (opcional) opcional.style.display = precisa ? 'none' : '';
+    if (obrigatoria) obrigatoria.style.display = precisa ? '' : 'none';
+    if (aviso) aviso.style.display = quem.value === 'Outro' ? '' : 'none';
   }
-
-  motivoSelect.addEventListener('change', atualizar);
-  quemBuscaSelect.addEventListener('change', atualizar);
+  motivo.addEventListener('change', atualizar);
+  quem.addEventListener('change', atualizar);
   atualizar();
 }
 
-// Restringe o calendário de "Data da Liberação" ao ano atual e bloqueia
-// fins de semana (só é permitido escolher de segunda a sexta-feira).
 function configurarCalendarioLiberacao() {
-  const anoAtual = new Date().getFullYear();
-  const dataInput = document.getElementById('dataLiberacao');
-  if (!dataInput) return;
-
-  dataInput.min = `${anoAtual}-01-01`;
-  dataInput.max = `${anoAtual}-12-31`;
-
-  dataInput.addEventListener('input', function () {
-    if (!dataInput.value) return;
-    const diaSemana = new Date(dataInput.value + 'T00:00:00').getDay();
-    if (diaSemana === 0 || diaSemana === 6) {
-      alert('Só é possível selecionar datas de segunda a sexta-feira.');
-      dataInput.value = '';
+  const input = document.getElementById('dataLiberacao');
+  if (!input) return;
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const hojeIso = `${ano}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
+  input.min = hojeIso;
+  input.max = `${ano}-12-31`;
+  input.addEventListener('change', async () => {
+    if (!input.value) return;
+    const dia = new Date(input.value + 'T00:00:00').getDay();
+    if (dia === 0 || dia === 6) {
+      alert('A liberação deve ser solicitada para um dia letivo, de segunda a sexta-feira.');
+      input.value = '';
+      return;
     }
-  });
-}
-
-// Garante que o horário digitado esteja dentro do horário de aula.
-// A escola funciona das 07:30 às 17:00 — não faz sentido liberar o
-// estudante fora desse intervalo, então o horário de saída precisa
-// estar dentro dele.
-const HORARIO_MIN_LIBERACAO = '07:30';
-const HORARIO_MAX_LIBERACAO = '17:00';
-
-function horarioValido(hora) {
-  if (!/^\d{2}:\d{2}$/.test(hora)) return false;
-  return hora >= HORARIO_MIN_LIBERACAO && hora <= HORARIO_MAX_LIBERACAO;
-}
-
-function configurarHorarioLiberacao() {
-  const horaInput = document.getElementById('horaLiberacao');
-  if (!horaInput) return;
-
-  horaInput.addEventListener('input', function () {
-    if (!horaInput.value) return;
-    if (!horarioValido(horaInput.value)) {
-      alert('O horário de saída deve estar entre 07:30 e 17:00 (horário de aula).');
-      horaInput.value = '';
-    }
+    await atualizarLimitesHorario();
   });
 }
 
 async function carregarAlunos() {
-  const usuario = getUsuarioLogado();
-  const idResponsavel = usuario?.pessoa?.id;
   const select = document.getElementById('estudante');
-  if (!idResponsavel || !select) return;
-
-  const resposta = await apiFetch(`${API_URL}/alunos?id_responsavel=${idResponsavel}`);
-  const alunos = await resposta.json();
-
-  select.innerHTML = '<option value="" disabled selected>Selecione o estudante...</option>';
-  alunos.forEach(aluno => {
-    select.innerHTML += `<option value="${escapeHtml(aluno.matricula)}">${escapeHtml(aluno.nome)} - ${escapeHtml(aluno.descricao || aluno.turma)}</option>`;
-  });
-
-  // Se a página foi aberta a partir de "Meus Estudantes" (?matricula=123),
-  // já vem com o estudante certo pré-selecionado.
-  const matriculaPreSelecionada = new URLSearchParams(window.location.search).get('matricula');
-  if (matriculaPreSelecionada) select.value = matriculaPreSelecionada;
+  const submit = document.querySelector('#formLiberacao .submit-btn');
+  if (!select) return;
+  if (submit) submit.disabled = true;
+  try {
+    const resposta = await apiFetch(`${API_URL}/alunos`);
+    if (!resposta.ok) throw new Error();
+    const alunos = await resposta.json();
+    alunosPorMatricula = Object.fromEntries(alunos.map(a => [String(a.matricula), a]));
+    select.innerHTML = '<option value="" disabled selected>Selecione o estudante...</option>';
+    alunos.forEach(a => select.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(a.matricula)}">${escapeHtml(a.nome)} - ${escapeHtml(a.turma)}</option>`));
+    select.addEventListener('change', atualizarLimitesHorario);
+    const pre = new URLSearchParams(window.location.search).get('matricula');
+    if (pre) select.value = pre;
+    if (submit) submit.disabled = alunos.length === 0;
+  } catch {
+    select.innerHTML = '<option value="" disabled selected>Não foi possível carregar os estudantes</option>';
+    select.disabled = true;
+  }
 }
 
-document.getElementById('formLiberacao').addEventListener('submit', async function (e) {
-  e.preventDefault();
+const DIAS = ['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
 
-  const usuario = getUsuarioLogado();
+async function atualizarLimitesHorario() {
+  const matricula = document.getElementById('estudante')?.value;
+  const data = document.getElementById('dataLiberacao')?.value;
+  const hora = document.getElementById('horaLiberacao');
+  if (!matricula || !data || !hora) return;
+  const aluno = alunosPorMatricula[String(matricula)];
+  if (!aluno?.turma) return;
+  try {
+    const resp = await apiFetch(`${API_URL}/horarios?turma=${encodeURIComponent(aluno.turma)}`);
+    if (!resp.ok) throw new Error();
+    const horarios = await resp.json();
+    const diaNome = DIAS[new Date(data + 'T00:00:00').getDay()];
+    const aulas = horarios.filter(h => h.dia_da_semana === diaNome);
+    if (!aulas.length) {
+      hora.value = '';
+      hora.removeAttribute('min');
+      hora.removeAttribute('max');
+      alert('Não existe grade de aula cadastrada para essa turma nessa data.');
+      return;
+    }
+    const inicios = aulas.map(a => String(a.hr_inicio).slice(0,5)).sort();
+    const finais = aulas.map(a => String(a.hr_final).slice(0,5)).sort();
+    hora.min = inicios[0];
+    hora.max = finais[finais.length-1];
+    if (hora.value && (hora.value < hora.min || hora.value > hora.max)) hora.value = '';
+  } catch {
+    hora.removeAttribute('min');
+    hora.removeAttribute('max');
+  }
+}
+
+document.getElementById('formLiberacao')?.addEventListener('submit', async function (e) {
+  e.preventDefault();
   const estudante = document.getElementById('estudante').value;
   const data = document.getElementById('dataLiberacao').value;
   const hora = document.getElementById('horaLiberacao').value;
   const motivo = document.getElementById('motivo').value;
   const quemBusca = document.getElementById('quemBusca').value;
   const observacoes = document.getElementById('observacoes').value;
+  const horaInput = document.getElementById('horaLiberacao');
 
-  if (!usuario?.pessoa?.id) { alert('Faça login novamente.'); return; }
   if (!estudante || !data || !hora || !motivo || !quemBusca) { alert('Preencha todos os campos obrigatórios.'); return; }
-
-  if (motivo === 'Outro' && !observacoes.trim()) {
-    alert('Para o motivo "Outro", preencha a descrição explicando do que se trata.');
-    return;
-  }
-  if (quemBusca === 'Outro' && !observacoes.trim()) {
-    alert('Informe na descrição quem irá buscar o estudante.');
+  if ((motivo === 'Outro' || quemBusca === 'Outro') && !observacoes.trim()) { alert('Preencha a descrição para a opção selecionada.'); return; }
+  if (horaInput.min && hora < horaInput.min || horaInput.max && hora > horaInput.max) {
+    alert(`O horário deve estar dentro da grade da turma (${horaInput.min}–${horaInput.max}).`);
     return;
   }
 
-  if (!horarioValido(hora)) {
-    alert('O horário de saída deve estar entre 07:30 e 17:00 (horário de aula).');
-    return;
+  const botao = this.querySelector('.submit-btn');
+  const original = botao?.innerHTML;
+  if (botao) { botao.disabled = true; botao.textContent = 'Enviando...'; }
+  try {
+    const resposta = await apiFetch(`${API_URL}/ocorrencias/liberacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matricula: estudante, data_saida: data, hora_saida: hora, motivo, observacoes, quem_busca: quemBusca })
+    });
+    const resultado = await resposta.json();
+    if (!resposta.ok) { alert(resultado.erro || 'Erro ao enviar solicitação.'); return; }
+    alert(resultado.mensagem);
+    window.location.href = 'home.html';
+  } finally {
+    if (botao) { botao.disabled = false; botao.innerHTML = original || 'Solicitar Liberação'; }
   }
-
-  const diaSemanaHoje = new Date().getDay();
-  if (diaSemanaHoje === 0 || diaSemanaHoje === 6) {
-    alert('O envio de solicitações de liberação só pode ser realizado de segunda a sexta-feira.');
-    return;
-  }
-  const diaSemanaLiberacao = new Date(data + 'T00:00:00').getDay();
-  if (diaSemanaLiberacao === 0 || diaSemanaLiberacao === 6) {
-    alert('A data de liberação deve ser de segunda a sexta-feira.');
-    return;
-  }
-
-  const resposta = await apiFetch(`${API_URL}/ocorrencias/liberacoes`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      matricula: estudante,
-      id_responsavel: usuario.pessoa.id,
-      data_saida: data,
-      hora_saida: hora,
-      motivo,
-      observacoes,
-      quem_busca: quemBusca
-    })
-  });
-
-  const resultado = await resposta.json();
-  if (!resposta.ok) { alert(resultado.erro || 'Erro ao enviar solicitação.'); return; }
-
-  alert(resultado.mensagem);
-  document.body.classList.add('fade-out');
-  setTimeout(() => { window.location.href = 'home.html'; }, 350);
 });
 
 function cancelarSolicitacao() {
-  if (confirm('Deseja cancelar a solicitação?')) {
-    document.body.classList.add('fade-out');
-    setTimeout(() => { window.location.href = 'home.html'; }, 350);
-  }
+  if (confirm('Deseja cancelar a solicitação?')) window.location.href = 'home.html';
 }

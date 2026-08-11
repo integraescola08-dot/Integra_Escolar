@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="icon" type="image/x-icon" href="../../assets/img/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/img/favicon-32.png">
-  <script>window.PERFIL_ESPERADO = 'porteiro';</script>
-  <script src="../../assets/js/guarda-sessao.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Integra Escolar | Porteiro</title>
@@ -47,7 +43,7 @@
         <p>Lista de alunos autorizados pela gestão para saída antecipada.</p>
       </div>
       <div class="contador-badge">
-        <span id="totalLiberados">3</span>
+        <span id="totalLiberados">0</span>
         <small>aguardando saída</small>
       </div>
     </div>
@@ -60,115 +56,7 @@
 
     <!-- Lista -->
     <div class="lista-alunos" id="listaAlunos">
-
-      <!-- CARD 1 — aguardando -->
-      <div class="card-aluno" data-status="aguardando">
-        <div class="card-topo">
-          <div class="status-tag tag-aguardando">
-            <i class="fa-regular fa-clock"></i> Aguardando saída
-          </div>
-          <div class="hora-aprovacao">Aprovado às 10:45</div>
-        </div>
-
-        <div class="card-corpo">
-          <div class="aluno-info">
-            <div class="avatar"><i class="fa-regular fa-user"></i></div>
-            <div>
-              <h2>Maria Miranda Almeida</h2>
-              <div class="detalhes">
-                <span><i class="fa-solid fa-users"></i> 3º MKT B</span>
-                <span><i class="fa-regular fa-clock"></i> Saída: 11:30</span>
-                <span><i class="fa-solid fa-stethoscope"></i> Consulta Médica</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="quem-busca">
-            <i class="fa-regular fa-user"></i>
-            <div>
-              <small>Quem irá buscar</small>
-              <strong>Motorista de aplicativo</strong>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-acoes">
-          <button class="btn-confirmar-saida" onclick="confirmarSaida(this)">
-            <i class="fa-solid fa-check"></i> Confirmar Saída
-          </button>
-        </div>
-      </div>
-
-      <!-- CARD 2 — aguardando -->
-      <div class="card-aluno" data-status="aguardando">
-        <div class="card-topo">
-          <div class="status-tag tag-aguardando">
-            <i class="fa-regular fa-clock"></i> Aguardando saída
-          </div>
-          <div class="hora-aprovacao">Aprovado às 13:10</div>
-        </div>
-
-        <div class="card-corpo">
-          <div class="aluno-info">
-            <div class="avatar"><i class="fa-regular fa-user"></i></div>
-            <div>
-              <h2>Luiz Heleno Neto Serafim da Silva</h2>
-              <div class="detalhes">
-                <span><i class="fa-solid fa-users"></i> 3º TDS A</span>
-                <span><i class="fa-regular fa-clock"></i> Saída: 15:00</span>
-                <span><i class="fa-solid fa-house"></i> Compromisso Familiar</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="quem-busca">
-            <i class="fa-regular fa-user"></i>
-            <div>
-              <small>Quem irá buscar</small>
-              <strong>Responsável</strong>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-acoes">
-          <button class="btn-confirmar-saida" onclick="confirmarSaida(this)">
-            <i class="fa-solid fa-check"></i> Confirmar Saída
-          </button>
-        </div>
-      </div>
-
-      <!-- CARD 3 — saída confirmada -->
-      <div class="card-aluno" data-status="saiu">
-        <div class="card-topo">
-          <div class="status-tag tag-saiu">
-            <i class="fa-solid fa-circle-check"></i> Saída confirmada
-          </div>
-          <div class="hora-aprovacao">Saiu às 08:55</div>
-        </div>
-
-        <div class="card-corpo">
-          <div class="aluno-info">
-            <div class="avatar avatar-saiu"><i class="fa-regular fa-user"></i></div>
-            <div>
-              <h2>Clara da Silva</h2>
-              <div class="detalhes">
-                <span><i class="fa-solid fa-users"></i> 1º MKT A</span>
-                <span><i class="fa-regular fa-clock"></i> Saída: 08:40</span>
-                <span><i class="fa-solid fa-triangle-exclamation"></i> Emergência</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="quem-busca">
-            <i class="fa-regular fa-user"></i>
-            <div>
-              <small>Quem irá buscar</small>
-              <strong>Parente do aluno</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <p class="carregando-porteiro">Carregando liberações...</p>
     </div>
 
     <!-- Estado vazio -->

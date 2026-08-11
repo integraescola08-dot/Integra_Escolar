@@ -1,5 +1,3 @@
-import time
-from collections import defaultdict
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from mysql.connector import IntegrityError
@@ -10,26 +8,6 @@ auth_bp = Blueprint('auth', __name__)
 
 NIVEIS = {1: 'responsavel', 2: 'professor', 3: 'gestao', 4: 'porteiro', 5: 'administrador'}
 
-# Rate limit simples contra força bruta no login: no máximo TENTATIVAS_MAX
-# tentativas falhas por email dentro da JANELA_SEGUNDOS. Guardado em memória
-# do processo — funciona bem para um app com um único worker; se o projeto
-# crescer para vários workers/servidores, isso precisa migrar para algo
-# compartilhado (ex.: Redis).
-TENTATIVAS_MAX = 5
-JANELA_SEGUNDOS = 5 * 60
-_tentativas_falhas = defaultdict(list)
-
-
-def _bloqueado_por_tentativas(chave):
-    agora = time.time()
-    _tentativas_falhas[chave] = [t for t in _tentativas_falhas[chave] if agora - t < JANELA_SEGUNDOS]
-    return len(_tentativas_falhas[chave]) >= TENTATIVAS_MAX
-
-
-def _registrar_tentativa_falha(chave):
-    _tentativas_falhas[chave].append(time.time())
-
-
 @auth_bp.route('/login', methods=['POST'])
 def login():
     dados = request.get_json() or {}
@@ -39,20 +17,19 @@ def login():
     if not email or not senha:
         return jsonify({'erro': 'Email e senha são obrigatórios.'}), 400
 
-    if _bloqueado_por_tentativas(email):
-        return jsonify({'erro': 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.'}), 429
-
-    usuario = fetch_one('SELECT * FROM Usuario WHERE email = %s', (email,))
+    usuario = fetch_one('SELECT * FROM Usuario WHERE email = %s', (email.lower(),))
     if not usuario:
-        _registrar_tentativa_falha(email)
         return jsonify({'erro': 'Usuário não encontrado.'}), 401
+    if not usuario.get('ativo', True):
+        return jsonify({'erro': 'Esta conta está desativada. Procure a administração.'}), 403
 
-    # A senha precisa estar salva com hash (todo cadastro novo já usa
-    # generate_password_hash). Não há mais fallback para texto puro.
-    senha_ok = check_password_hash(usuario['senha'], senha)
+    senha_banco = usuario['senha']
+    try:
+        senha_ok = check_password_hash(senha_banco, senha)
+    except (ValueError, TypeError):
+        senha_ok = False
 
     if not senha_ok:
-        _registrar_tentativa_falha(email)
         return jsonify({'erro': 'Senha incorreta.'}), 401
 
     perfil_banco = NIVEIS.get(usuario['nivel_acesso'])
@@ -70,6 +47,14 @@ def login():
         pessoa = fetch_one('SELECT id_porteiro AS id, nome FROM Porteiro WHERE id_usuario = %s', (usuario['id_usuario'],))
     elif perfil_banco == 'administrador':
         pessoa = fetch_one('SELECT id_administrador AS id, nome FROM Administrador WHERE id_usuario = %s', (usuario['id_usuario'],))
+
+    # Todo usuário precisa possuir o registro complementar do próprio perfil.
+    # Isso evita gerar um token incompleto caso exista, por exemplo, um Usuario
+    # nível 5 sem a linha correspondente em Administrador.
+    if not pessoa:
+        return jsonify({
+            'erro': 'O cadastro deste usuário está incompleto para o perfil informado. Procure o administrador do sistema.'
+        }), 409
 
     dados_usuario = {
         'id_usuario': usuario['id_usuario'], 'email': usuario['email'],
@@ -98,8 +83,8 @@ def cadastro_responsavel():
 
     if not all((nome, cpf, telefone, email, senha, matricula)):
         return jsonify({'erro': 'Preencha todos os campos obrigatórios.'}), 400
-    if not matricula.isdigit():
-        return jsonify({'erro': 'A matrícula deve conter apenas números.'}), 400
+    if not matricula.isdigit() or len(matricula) != 12:
+        return jsonify({'erro': 'A matrícula deve conter exatamente 12 dígitos.'}), 400
     if len(cpf) != 11:
         return jsonify({'erro': 'O CPF deve possuir 11 números.'}), 400
     if len(telefone) not in (10, 11):
@@ -116,7 +101,7 @@ def cadastro_responsavel():
         # responsáveis tentem se cadastrar na mesma matrícula ao mesmo tempo.
         cur.execute(
             'SELECT matricula, nome, id_responsavel FROM Aluno WHERE matricula = %s FOR UPDATE',
-            (int(matricula),)
+            (matricula,)
         )
         aluno = cur.fetchone()
         if not aluno:
@@ -152,7 +137,7 @@ def cadastro_responsavel():
 
         cur.execute(
             'UPDATE Aluno SET id_responsavel = %s WHERE matricula = %s',
-            (id_responsavel, int(matricula))
+            (id_responsavel, matricula)
         )
         conn.commit()
 

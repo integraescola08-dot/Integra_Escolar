@@ -31,7 +31,7 @@ main { max-width: 1200px; margin: auto; padding: 32px 20px 60px; }
 .hero h1 { margin-bottom: 6px; font-size: 26px; }
 .hero p { color: var(--texto-secundario); }
 
-.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 24px 0; }
+.cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 24px 0; }
 .cards article {
   background: var(--branco);
   border: 1px solid var(--borda);
@@ -113,4 +113,21 @@ form button:hover { filter: brightness(1.06); }
   .cards { grid-template-columns: repeat(2, 1fr); }
   form { grid-template-columns: 1fr; }
   .linha { grid-template-columns: 1fr 1fr; }
+}
+
+.ajuda-form {
+  color: var(--texto-secundario);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+.arquivo-grade {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--texto-secundario);
+  font-size: 13px;
+}
+.arquivo-grade input[type="file"] {
+  min-height: 44px;
+  padding: 8px;
 }

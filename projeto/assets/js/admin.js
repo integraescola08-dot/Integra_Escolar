@@ -1,9 +1,3 @@
-/* ============================================================
-   Integra Escolar — Painel do Administrador
-   Adaptado para usar nosso sistema de token (apiFetch/getUsuarioLogado)
-   em vez de sessão de servidor.
-   ============================================================ */
-
 const $  = seletor => document.querySelector(seletor);
 const $$ = seletor => document.querySelectorAll(seletor);
 
@@ -11,16 +5,14 @@ function msg(texto, erro = false) {
   const el = $('#mensagem');
   el.textContent = texto;
   el.className = erro ? 'erro' : 'sucesso';
-  setTimeout(() => { el.className = ''; }, 3500);
+  setTimeout(() => { el.className = ''; }, 4500);
 }
 
 async function chamarApi(caminho, opcoes = {}) {
-  const resposta = await apiFetch(`${API_URL}${caminho}`, {
-    ...opcoes,
-    headers: { 'Content-Type': 'application/json', ...(opcoes.headers || {}) }
-  });
-  const dados = await resposta.json();
-  if (!resposta.ok) throw new Error(dados.erro || 'Erro na operação.');
+  const resposta = await apiFetch(`${API_URL}${caminho}`, opcoes);
+  const tipo = resposta.headers.get('content-type') || '';
+  const dados = tipo.includes('application/json') ? await resposta.json() : {};
+  if (!resposta.ok) throw new Error(dados.erro || `Erro na operação (${resposta.status}).`);
   return dados;
 }
 
@@ -31,7 +23,7 @@ function dadosDoFormulario(form) {
 function renderizarLinhas(lista, campos) {
   if (!lista.length) return '<p class="vazio">Nenhum registro cadastrado.</p>';
   return lista.map(item =>
-    `<div class="linha">${campos.map(c => `<span>${escapeHtml(item[c] ?? '—')}</span>`).join('')}</div>`
+    `<div class="linha">${campos.map(c => `<span>${item[c] ?? '—'}</span>`).join('')}</div>`
   ).join('');
 }
 
@@ -44,28 +36,34 @@ async function carregar() {
   $('#saudacao').textContent = `Bem-vindo, ${(usuario.pessoa && usuario.pessoa.nome) || 'Administrador'}`;
 
   const resumo = await chamarApi('/admin/resumo');
-  ['alunos', 'professores', 'coordenadores', 'turmas'].forEach(chave => {
+  ['alunos', 'professores', 'coordenadores', 'porteiros', 'turmas'].forEach(chave => {
     $(`#n-${chave}`).textContent = resumo[chave];
   });
 
-  const [turmas, alunos, professores, coordenadores] = await Promise.all([
+  const [turmas, alunos, professores, coordenadores, porteiros, materias] = await Promise.all([
     chamarApi('/admin/turmas'),
     chamarApi('/admin/alunos'),
     chamarApi('/admin/professores'),
     chamarApi('/admin/coordenadores'),
+    chamarApi('/admin/porteiros'),
+    chamarApi('/admin/materias'),
   ]);
 
-  $('#lista-turmas').innerHTML        = renderizarLinhas(turmas, ['codigo', 'descricao']);
+  $('#lista-turmas').innerHTML        = renderizarLinhas(turmas, ['codigo', 'total_aulas']);
   $('#lista-alunos').innerHTML        = renderizarLinhas(alunos, ['matricula', 'nome', 'turma', 'responsavel']);
-  $('#lista-professores').innerHTML   = renderizarLinhas(professores, ['matricula', 'nome', 'email', 'telefone']);
+  $('#lista-professores').innerHTML   = renderizarLinhas(professores, ['matricula', 'nome', 'materias', 'email', 'telefone']);
   $('#lista-coordenadores').innerHTML = renderizarLinhas(coordenadores, ['id', 'nome', 'email', 'telefone']);
+  $('#lista-porteiros').innerHTML      = renderizarLinhas(porteiros, ['id', 'nome', 'email', 'telefone']);
 
-  const selectTurma = document.querySelector('#form-aluno select');
+  const selectTurma = document.querySelector('#form-aluno select[name="turma"]');
   selectTurma.innerHTML = '<option value="">Selecione a turma</option>' +
-    turmas.map(t => `<option value="${escapeHtml(t.codigo)}">${escapeHtml(t.codigo)} — ${escapeHtml(t.descricao)}</option>`).join('');
+    turmas.map(t => `<option value="${t.codigo}">${t.codigo}</option>`).join('');
+
+  const selectMateria = document.querySelector('#form-professor select[name="id_materia"]');
+  selectMateria.innerHTML = '<option value="">Selecione a matéria</option>' +
+    materias.map(m => `<option value="${m.id_materia}">${m.nome}</option>`).join('');
 }
 
-// ── Troca de abas ─────────────────────────────────────────────
 $$('.tabs button').forEach(botao => {
   botao.addEventListener('click', () => {
     $$('.tabs button, .painel').forEach(el => el.classList.remove('ativo'));
@@ -74,27 +72,12 @@ $$('.tabs button').forEach(botao => {
   });
 });
 
-// ── Máscara: só números, no máximo 7 dígitos, na matrícula do aluno ──
-const matriculaAlunoInput = document.querySelector('#form-aluno input[name="matricula"]');
-if (matriculaAlunoInput) {
-  matriculaAlunoInput.addEventListener('input', () => {
-    matriculaAlunoInput.value = matriculaAlunoInput.value.replace(/\D/g, '').slice(0, 7);
-  });
-}
-
-// ── Envio de formulários ─────────────────────────────────────
-async function enviarFormulario(form, caminho) {
+async function enviarJson(form, caminho) {
   try {
-    const dados = dadosDoFormulario(form);
-
-    // Matrícula é opcional aqui — mas se foi preenchida, precisa ter 7 dígitos.
-    if (form === $('#form-aluno') && dados.matricula && dados.matricula.length !== 7) {
-      throw new Error('A matrícula deve ter exatamente 7 dígitos, ou fique em branco para gerar automaticamente.');
-    }
-
     const resultado = await chamarApi(caminho, {
       method: 'POST',
-      body: JSON.stringify(dados)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dadosDoFormulario(form))
     });
     msg(resultado.mensagem);
     form.reset();
@@ -104,13 +87,36 @@ async function enviarFormulario(form, caminho) {
   }
 }
 
-$('#form-turma').addEventListener('submit', e => { e.preventDefault(); enviarFormulario(e.target, '/admin/turmas'); });
-$('#form-aluno').addEventListener('submit', e => { e.preventDefault(); enviarFormulario(e.target, '/admin/alunos'); });
-$('#form-professor').addEventListener('submit', e => { e.preventDefault(); enviarFormulario(e.target, '/admin/professores'); });
-$('#form-coordenador').addEventListener('submit', e => { e.preventDefault(); enviarFormulario(e.target, '/admin/coordenadores'); });
+async function enviarTurma(form) {
+  const botao = form.querySelector('button');
+  try {
+    botao.disabled = true;
+    botao.textContent = 'Importando...';
+    const resultado = await chamarApi('/admin/turmas', {
+      method: 'POST',
+      body: new FormData(form)
+    });
+    let complemento = `${resultado.aulas_importadas} aulas e ${resultado.materias_identificadas} matérias identificadas.`;
+    if (resultado.aulas_sem_professor) {
+      complemento += ` ${resultado.aulas_sem_professor} aulas aguardam professor da matéria.`;
+    }
+    msg(`${resultado.mensagem} ${complemento}`);
+    form.reset();
+    await carregar();
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = 'Cadastrar turma e importar grade';
+  }
+}
 
-// sair() já vem do header.js — limpa a sessão (usuário + token) e volta pro login.
+$('#form-turma').addEventListener('submit', e => { e.preventDefault(); enviarTurma(e.target); });
+$('#form-aluno').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/alunos'); });
+$('#form-professor').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/professores'); });
+$('#form-coordenador').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/coordenadores'); });
+$('#form-porteiro').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/porteiros'); });
+
 $('#logout').addEventListener('click', sair);
 
-// ── Init ──────────────────────────────────────────────────────
 carregar().catch(erro => msg(erro.message, true));

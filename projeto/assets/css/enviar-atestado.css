@@ -122,3 +122,10 @@ textarea::placeholder { color:var(--texto-secundario); }
   .upload-content i  { font-size:52px; }
   .buttons-area { flex-direction:column; }
 }
+
+
+/* Período do atestado */
+.linha-datas { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.linha-datas input[type="date"] { width:100%; box-sizing:border-box; padding:14px 16px; border:1px solid var(--borda,#d7dde5); border-radius:12px; background:#fff; font:inherit; }
+.ajuda-periodo { margin-top:8px; color:#64748b; font-size:.9rem; }
+@media (max-width:640px){ .linha-datas{grid-template-columns:1fr;} }
