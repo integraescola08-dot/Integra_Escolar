@@ -3,11 +3,11 @@
    são um EXEMPLO — troque pelos dados reais da sua instituição. */
 
 const CONTATO_ESCOLA = {
-  telefone: { label: 'Telefone', valor: '(81) 3333-4444', href: 'tel:+558133334444' },
-  whatsapp: { label: 'WhatsApp', valor: '(81) 99999-8888', href: 'https://wa.me/5581999998888' },
-  email:    { label: 'E-mail',   valor: 'secretaria@integraescolar.com.br', href: 'mailto:secretaria@integraescolar.com.br' },
-  endereco: { label: 'Endereço', valor: 'Rua da Escola, 123 — Centro' },
+  telefone: { label: 'Telefone', valor: '(81) 995139963', href: 'tel:+558195139963' },
+  whatsapp: { label: 'WhatsApp', valor: '(81) 995139963', href: 'https://wa.me/558195139963' },
+  email:    { label: 'E-mail',   valor: 'integraescola08@gmail.com', href: 'mailto:integraescola08@gmail.com' },
   horario:  { label: 'Atendimento', valor: 'Segunda a sexta, 7h às 17h' },
+  endereco: { label: 'Endereço', valor: ' R. Ver. João Avelino Sobrinho - Cidade Alta, Caruaru - PE, 55031-470' },
 };
 
 const ICONES = {
