@@ -24,18 +24,32 @@
         <i class="fa-solid fa-users-gear"></i>
         <span>Gestão</span>
       </div>
-      <div class="menu" onclick="abrirMenu()">
-        <i class="fa-solid fa-bars"></i>
+  <div class="header-actions">
+        <button class="icon-btn" onclick="irPainel('contato-ajuda')" title="Contato e Ajuda" aria-label="Contato e Ajuda">
+          <i class="fa-regular fa-circle-question"></i>
+        </button>
+        <button class="icon-btn" onclick="irPainel('sobre')" title="Sobre o Integra Escolar" aria-label="Sobre o Integra Escolar">
+          <img src="../../assets/img/logo-branca.png" alt="">
+        </button>
       </div>
     </div>
-    <div class="dropdown-menu" id="dropdownMenu">
-      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Meu Perfil</span></div>
-      <div class="menu-item"><i class="fa-regular fa-clock"></i><span>Histórico</span></div>
-      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
-      <div class="menu-item sair" onclick="sair()">
-        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
-      </div>
-    </div>
+        <nav class="quick-menu">
+
+        <a href="#" class="quick-item active" data-panel="home" onclick="irPainel('home',this); return false;">
+            <i class="fa-solid fa-house"></i>
+            <span>Tela Inicial</span>
+        </a>
+
+        <a href="#" class="quick-item" data-panel="historico" onclick="irPainel('historico',this); return false;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Histórico</span>
+        </a>
+
+        <a href="#" class="quick-item" data-panel="configuracoes" onclick="irPainel('configuracoes',this); return false;">
+            <i class="fa-solid fa-gear"></i>
+            <span>Configurações</span>
+        </a>
+    </nav>
   </header>
 
   <div class="container">
