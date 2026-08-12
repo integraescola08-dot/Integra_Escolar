@@ -20,12 +20,49 @@ function dadosDoFormulario(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
 
-function renderizarLinhas(lista, campos) {
+function renderizarLinhas(lista, campos, opcoes = {}) {
   if (!lista.length) return '<p class="vazio">Nenhum registro cadastrado.</p>';
-  return lista.map(item =>
-    `<div class="linha">${campos.map(c => `<span>${item[c] ?? '—'}</span>`).join('')}</div>`
-  ).join('');
+  return lista.map(item => {
+    const colunas = campos.map(c => `<span>${item[c] ?? '—'}</span>`).join('');
+    const excluir = opcoes.excluir
+      ? `<button type="button" class="btn-excluir" data-excluir="${opcoes.excluir}" data-id="${item[opcoes.chave]}">Excluir</button>`
+      : '';
+    return `<div class="linha">${colunas}${excluir}</div>`;
+  }).join('');
 }
+
+const NOME_RECURSO = {
+  turmas: 'turma',
+  alunos: 'aluno',
+  professores: 'professor',
+  coordenadores: 'coordenador(a)',
+  porteiros: 'porteiro(a)',
+};
+
+async function excluirRegistro(botao) {
+  const tipo = botao.dataset.excluir;
+  const id = botao.dataset.id;
+  const nome = NOME_RECURSO[tipo] || 'registro';
+  if (!confirm(`Tem certeza que deseja excluir este(a) ${nome}? Essa ação não pode ser desfeita.`)) return;
+
+  botao.disabled = true;
+  const textoOriginal = botao.textContent;
+  botao.textContent = 'Excluindo...';
+  try {
+    const resultado = await chamarApi(`/admin/${tipo}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    msg(resultado.mensagem);
+    await carregar();
+  } catch (erro) {
+    msg(erro.message, true);
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
+document.addEventListener('click', e => {
+  const botao = e.target.closest('[data-excluir]');
+  if (botao) excluirRegistro(botao);
+});
 
 async function carregar() {
   const usuario = getUsuarioLogado();
@@ -49,11 +86,11 @@ async function carregar() {
     chamarApi('/admin/materias'),
   ]);
 
-  $('#lista-turmas').innerHTML        = renderizarLinhas(turmas, ['codigo', 'total_aulas']);
-  $('#lista-alunos').innerHTML        = renderizarLinhas(alunos, ['matricula', 'nome', 'turma', 'responsavel']);
-  $('#lista-professores').innerHTML   = renderizarLinhas(professores, ['matricula', 'nome', 'materias', 'email', 'telefone']);
-  $('#lista-coordenadores').innerHTML = renderizarLinhas(coordenadores, ['id', 'nome', 'email', 'telefone']);
-  $('#lista-porteiros').innerHTML      = renderizarLinhas(porteiros, ['id', 'nome', 'email', 'telefone']);
+  $('#lista-turmas').innerHTML        = renderizarLinhas(turmas, ['codigo', 'total_aulas'], { excluir: 'turmas', chave: 'codigo' });
+  $('#lista-alunos').innerHTML        = renderizarLinhas(alunos, ['matricula', 'nome', 'turma', 'responsavel'], { excluir: 'alunos', chave: 'matricula' });
+  $('#lista-professores').innerHTML   = renderizarLinhas(professores, ['matricula', 'nome', 'materias', 'email', 'telefone'], { excluir: 'professores', chave: 'matricula' });
+  $('#lista-coordenadores').innerHTML = renderizarLinhas(coordenadores, ['id', 'nome', 'email', 'telefone'], { excluir: 'coordenadores', chave: 'id' });
+  $('#lista-porteiros').innerHTML      = renderizarLinhas(porteiros, ['id', 'nome', 'email', 'telefone'], { excluir: 'porteiros', chave: 'id' });
 
   const selectTurma = document.querySelector('#form-aluno select[name="turma"]');
   selectTurma.innerHTML = '<option value="">Selecione a turma</option>' +

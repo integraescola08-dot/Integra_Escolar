@@ -7,7 +7,7 @@ from mysql.connector import IntegrityError
 from openpyxl import load_workbook
 from werkzeug.security import generate_password_hash
 
-from db import fetch_all, fetch_one, get_connection
+from db import execute, fetch_all, fetch_one, get_connection
 from auth_utils import papel_obrigatorio
 
 admin_bp = Blueprint('admin', __name__)
@@ -242,6 +242,40 @@ def criar_turma():
         conn.close()
 
 
+@admin_bp.route('/turmas/<codigo>', methods=['DELETE'])
+@papel_obrigatorio('administrador')
+def excluir_turma(codigo):
+    codigo = texto(codigo).upper()
+
+    turma = fetch_one('SELECT codigo FROM Turma WHERE codigo = %s', (codigo,))
+    if not turma:
+        return jsonify({'erro': 'Turma não encontrada.'}), 404
+
+    total_alunos = fetch_one(
+        'SELECT COUNT(*) total FROM Aluno WHERE turma = %s AND ativo = TRUE', (codigo,)
+    )['total']
+    if total_alunos:
+        return jsonify({
+            'erro': f'Não é possível excluir: {total_alunos} aluno(s) ainda vinculado(s) a esta turma.'
+        }), 409
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute('DELETE FROM Horario WHERE turma = %s', (codigo,))
+        cur.execute('DELETE FROM Turma WHERE codigo = %s', (codigo,))
+        conn.commit()
+        return jsonify({'mensagem': 'Turma e grade de horários excluídas.'})
+    except IntegrityError:
+        conn.rollback()
+        return jsonify({
+            'erro': 'Não é possível excluir: já existem faltas/ocorrências registradas para aulas desta turma.'
+        }), 409
+    finally:
+        cur.close()
+        conn.close()
+
+
 @admin_bp.route('/alunos', methods=['GET'])
 @papel_obrigatorio('administrador')
 def alunos():
@@ -278,6 +312,26 @@ def criar_aluno():
     finally:
         cur.close()
         conn.close()
+
+
+@admin_bp.route('/alunos/<matricula>', methods=['DELETE'])
+@papel_obrigatorio('administrador')
+def excluir_aluno(matricula):
+    aluno = fetch_one('SELECT matricula FROM Aluno WHERE matricula = %s AND ativo = TRUE', (matricula,))
+    if not aluno:
+        return jsonify({'erro': 'Aluno não encontrado.'}), 404
+    execute('UPDATE Aluno SET ativo = FALSE WHERE matricula = %s', (matricula,))
+    return jsonify({'mensagem': 'Aluno removido.'})
+
+
+def desativar_usuario_da_pessoa(tabela, coluna_id, valor_id):
+    """Marca como inativo o Usuario ligado a um professor/coordenador/porteiro,
+    preservando o histórico (horários, ocorrências etc.) já vinculado a ele."""
+    pessoa = fetch_one(f'SELECT id_usuario FROM {tabela} WHERE {coluna_id} = %s', (valor_id,))
+    if not pessoa:
+        return False
+    execute('UPDATE Usuario SET ativo = FALSE WHERE id_usuario = %s', (pessoa['id_usuario'],))
+    return True
 
 
 def criar_pessoa(dados, nivel_acesso, tabela):
@@ -392,6 +446,14 @@ def criar_professor():
         conn.close()
 
 
+@admin_bp.route('/professores/<int:matricula>', methods=['DELETE'])
+@papel_obrigatorio('administrador')
+def excluir_professor(matricula):
+    if not desativar_usuario_da_pessoa('Professor', 'matricula', matricula):
+        return jsonify({'erro': 'Professor não encontrado.'}), 404
+    return jsonify({'mensagem': 'Professor removido.'})
+
+
 @admin_bp.route('/coordenadores', methods=['GET'])
 @papel_obrigatorio('administrador')
 def coordenadores():
@@ -409,6 +471,14 @@ def criar_coordenador():
     return erro if erro else (jsonify({'mensagem': resultado['mensagem']}), 201)
 
 
+@admin_bp.route('/coordenadores/<int:id_coordenador>', methods=['DELETE'])
+@papel_obrigatorio('administrador')
+def excluir_coordenador(id_coordenador):
+    if not desativar_usuario_da_pessoa('Coordenador', 'id_coordenador', id_coordenador):
+        return jsonify({'erro': 'Coordenador(a) não encontrado(a).'}), 404
+    return jsonify({'mensagem': 'Coordenador(a) removido(a).'})
+
+
 @admin_bp.route('/porteiros', methods=['GET'])
 @papel_obrigatorio('administrador')
 def porteiros():
@@ -424,3 +494,11 @@ def porteiros():
 def criar_porteiro():
     resultado, erro = criar_pessoa(request.get_json() or {}, 4, 'Porteiro')
     return erro if erro else (jsonify({'mensagem': resultado['mensagem']}), 201)
+
+
+@admin_bp.route('/porteiros/<int:id_porteiro>', methods=['DELETE'])
+@papel_obrigatorio('administrador')
+def excluir_porteiro(id_porteiro):
+    if not desativar_usuario_da_pessoa('Porteiro', 'id_porteiro', id_porteiro):
+        return jsonify({'erro': 'Porteiro(a) não encontrado(a).'}), 404
+    return jsonify({'mensagem': 'Porteiro(a) removido(a).'})

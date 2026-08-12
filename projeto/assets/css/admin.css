@@ -84,15 +84,32 @@ form button:hover { filter: brightness(1.06); }
 
 .lista { display: grid; gap: 8px; }
 .linha {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   padding: 12px 14px;
   background: var(--fundo-pagina);
   border-radius: 10px;
   font-size: 14px;
 }
+.linha span { flex: 1 1 140px; }
 .vazio { color: var(--texto-secundario); padding: 12px 0; }
+
+.btn-excluir {
+  flex: 0 0 auto;
+  margin-left: auto;
+  background: var(--vermelho-claro);
+  color: var(--vermelho);
+  border: 1px solid var(--vermelho);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-excluir:hover { background: var(--vermelho); color: var(--branco); }
+.btn-excluir:disabled { opacity: .6; cursor: not-allowed; }
 
 #mensagem {
   position: fixed;
@@ -112,7 +129,8 @@ form button:hover { filter: brightness(1.06); }
 @media (max-width: 800px) {
   .cards { grid-template-columns: repeat(2, 1fr); }
   form { grid-template-columns: 1fr; }
-  .linha { grid-template-columns: 1fr 1fr; }
+  .linha span { flex: 1 1 100%; }
+  .btn-excluir { margin-left: 0; }
 }
 
 .ajuda-form {
