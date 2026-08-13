@@ -31,6 +31,13 @@ function configurarDescricaoObrigatoriaLiberacao() {
   atualizar();
 }
 
+function validarDataLiberacao(data, anoAtual) {
+  if (!data) return false;
+  const min = `${anoAtual}-01-01`;
+  const max = `${anoAtual}-12-31`;
+  return data >= min && data <= max;
+}
+
 function configurarCalendarioLiberacao() {
   const input = document.getElementById('dataLiberacao');
   if (!input) return;
@@ -39,8 +46,14 @@ function configurarCalendarioLiberacao() {
   const hojeIso = `${ano}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
   input.min = hojeIso;
   input.max = `${ano}-12-31`;
-  input.addEventListener('change', async () => {
+
+  const verificarData = async () => {
     if (!input.value) return;
+    if (!validarDataLiberacao(input.value, ano)) {
+      alert(`A data da liberação deve estar no ano atual (${ano}).`);
+      input.value = '';
+      return;
+    }
     const dia = new Date(input.value + 'T00:00:00').getDay();
     if (dia === 0 || dia === 6) {
       alert('A liberação deve ser solicitada para um dia letivo, de segunda a sexta-feira.');
@@ -48,7 +61,10 @@ function configurarCalendarioLiberacao() {
       return;
     }
     await atualizarLimitesHorario();
-  });
+  };
+
+  input.addEventListener('input', verificarData);
+  input.addEventListener('change', verificarData);
 }
 
 async function carregarAlunos() {
@@ -117,6 +133,13 @@ document.getElementById('formLiberacao')?.addEventListener('submit', async funct
   const horaInput = document.getElementById('horaLiberacao');
 
   if (!estudante || !data || !hora || !motivo || !quemBusca) { alert('Preencha todos os campos obrigatórios.'); return; }
+  const anoAtual = new Date().getFullYear();
+  const minData = `${anoAtual}-01-01`;
+  const maxData = `${anoAtual}-12-31`;
+  if (data < minData || data > maxData) {
+    alert(`A data da liberação deve estar dentro do ano atual (${anoAtual}).`);
+    return;
+  }
   if ((motivo === 'Outro' || quemBusca === 'Outro') && !observacoes.trim()) { alert('Preencha a descrição para a opção selecionada.'); return; }
   if (horaInput.min && hora < horaInput.min || horaInput.max && hora > horaInput.max) {
     alert(`O horário deve estar dentro da grade da turma (${horaInput.min}–${horaInput.max}).`);

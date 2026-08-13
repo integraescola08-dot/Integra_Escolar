@@ -74,6 +74,14 @@ function configurarDescricaoObrigatoria() {
   atualizar();
 }
 
+function validarPeriodoAtual(data) {
+  if (!data) return false;
+  const anoAtual = new Date().getFullYear();
+  const min = `${anoAtual}-01-01`;
+  const max = `${anoAtual}-12-31`;
+  return data >= min && data <= max;
+}
+
 function configurarPeriodoAtestado() {
   const inicio = document.getElementById('dataInicioAtestado');
   const fim = document.getElementById('dataFimAtestado');
@@ -83,10 +91,26 @@ function configurarPeriodoAtestado() {
   const max = `${ano}-12-31`;
   inicio.min = fim.min = min;
   inicio.max = fim.max = max;
-  inicio.addEventListener('change', () => {
+
+  const aplicarValidade = () => {
+    if (inicio.value && !validarPeriodoAtual(inicio.value)) {
+      alert(`A data inicial deve estar no ano atual (${ano}).`);
+      inicio.value = '';
+    }
+    if (fim.value && !validarPeriodoAtual(fim.value)) {
+      alert(`A data final deve estar no ano atual (${ano}).`);
+      fim.value = '';
+    }
+    if (inicio.value && fim.value && fim.value < inicio.value) {
+      fim.value = inicio.value;
+    }
     fim.min = inicio.value || min;
-    if (!fim.value || fim.value < inicio.value) fim.value = inicio.value;
-  });
+    inicio.max = max;
+    fim.max = max;
+  };
+
+  inicio.addEventListener('change', aplicarValidade);
+  fim.addEventListener('change', aplicarValidade);
 }
 
 async function carregarAlunos() {
@@ -137,6 +161,13 @@ async function enviarArquivo() {
   if (!estudante) { alert('Selecione o estudante.'); return; }
   if (!tipo) { alert('Selecione o tipo de declaração.'); return; }
   if (!dataInicio || !dataFim) { alert('Informe o período coberto pelo documento.'); return; }
+  const anoAtual = new Date().getFullYear();
+  const minPeriodo = `${anoAtual}-01-01`;
+  const maxPeriodo = `${anoAtual}-12-31`;
+  if (dataInicio < minPeriodo || dataInicio > maxPeriodo || dataFim < minPeriodo || dataFim > maxPeriodo) {
+    alert(`O período do atestado deve estar dentro do ano atual (${anoAtual}).`);
+    return;
+  }
   if (dataFim < dataInicio) { alert('A data final não pode ser anterior à data inicial.'); return; }
   if (fileInput.files.length === 0) { alert('Selecione um arquivo para enviar.'); return; }
   if (tipo === 'outros' && !observacoes.trim()) {
