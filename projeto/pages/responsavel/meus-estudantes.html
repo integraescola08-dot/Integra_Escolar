@@ -26,6 +26,14 @@
       <p class="card-header-sub">Estudantes vinculados à sua conta de responsável</p>
     </div>
 
+    <!-- Ação: vincular novo estudante por matrícula -->
+    <div class="acao-vincular">
+      <button type="button" class="btn-adicionar" id="btn-abrir-vincular">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Adicionar estudante
+      </button>
+    </div>
+
     <!-- Lista -->
     <div class="lista-estudantes" id="lista">
       <div class="status-msg" id="carregando">
@@ -35,6 +43,24 @@
 
   </div>
 </div>
+
+<!-- Modal: vincular estudante por matrícula -->
+<div class="modal-fundo" id="modal-vincular" hidden>
+  <div class="modal-caixa">
+    <h3>Adicionar estudante</h3>
+    <p class="modal-sub">Informe a matrícula do estudante para vincular à sua conta.</p>
+    <form id="form-vincular">
+      <label for="input-matricula">Matrícula do estudante</label>
+      <input type="text" id="input-matricula" inputmode="numeric" placeholder="Digite a matrícula (6 a 12 dígitos)" minlength="6" maxlength="12" pattern="[0-9]{6,12}" required>
+      <p class="modal-msg" id="modal-msg" hidden></p>
+      <div class="modal-acoes">
+        <button type="button" class="btn-acao secundario" id="btn-cancelar-vincular">Cancelar</button>
+        <button type="submit" class="btn-acao primario" id="btn-confirmar-vincular">Vincular</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="../../assets/js/api.js"></script>
 <script src="../../assets/js/meus-estudantes.js"></script>
 </body>

@@ -168,3 +168,16 @@ carregarDados().catch(erro => {
   console.error(erro);
   document.getElementById('listaAlunos').innerHTML = '<p class="vazio">Não foi possível carregar os dados.</p>';
 });
+
+// Funções exclusivas do Modal de Sair do Professor
+function abrirConfirmarSair() {
+  document.getElementById('modalConfirmarSair').classList.add('show');
+}
+
+function fecharConfirmarSair() {
+  document.getElementById('modalConfirmarSair').classList.remove('show');
+}
+
+document.getElementById('modalConfirmarSair').addEventListener('click', e => {
+  if (e.target === e.currentTarget) fecharConfirmarSair();
+});

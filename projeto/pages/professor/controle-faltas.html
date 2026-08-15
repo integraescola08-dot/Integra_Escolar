@@ -15,8 +15,8 @@
     <div class="logo"><img src="../../assets/img/LOGO-minimalista.png" alt="Logo"></div>
     <div class="top-content">
       <div class="user"><i class="fa-solid fa-chalkboard-user"></i><span>Professor(a)</span></div>
-      <button class="btn-sair-professor" type="button" onclick="sair()">
-        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
+      <button class="btn-sair-top" onclick="abrirConfirmarSair()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sair
       </button>
     </div>
     <nav class="quick-menu">
@@ -77,6 +77,25 @@
       <h2 id="popupTitulo">Resposta registrada</h2>
       <p id="popupTexto">A situação da falta foi registrada.</p>
       <button class="popup-btn" id="fecharPopup">OK</button>
+    </div>
+  </div>
+
+  <!-- POPUP de confirmação de saída da conta -->
+  <div class="modal-overlay" id="modalConfirmarSair">
+    <div class="modal">
+      <div class="modal-header modal-header-alerta">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <h2>Sair da conta</h2>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja sair da sua conta?</p>
+        <div class="modal-buttons">
+          <button class="btn-cancelar" onclick="fecharConfirmarSair()">Cancelar</button>
+          <button class="btn-ok" onclick="sair()">
+            <i class="fa-solid fa-right-from-bracket"></i> Sair
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

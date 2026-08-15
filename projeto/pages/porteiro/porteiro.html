@@ -20,17 +20,9 @@
         <i class="fa-solid fa-user-shield"></i>
         <span>Porteiro</span>
       </div>
-      <div class="menu" onclick="abrirMenu()">
-        <i class="fa-solid fa-bars"></i>
-      </div>
-    </div>
-    <div class="dropdown-menu" id="dropdownMenu">
-      <div class="menu-item"><i class="fa-solid fa-house"></i><span>Início</span></div>
-      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Perfil</span></div>
-      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
-      <div class="menu-item sair" onclick="sair()">
-        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
-      </div>
+      <button class="btn-sair-top" onclick="abrirConfirmarSair()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sair
+      </button>
     </div>
   </header>
 
@@ -54,6 +46,16 @@
       <span>Estas liberações foram aprovadas pela gestão escolar. O porteiro deve registrar a saída confirmando a identidade de quem busca o aluno.</span>
     </div>
 
+    <!-- Busca + filtro -->
+    <div class="filtros-lista">
+      <input type="search" id="busca-porteiro" placeholder="Buscar por nome ou turma...">
+      <select id="filtro-status-porteiro">
+        <option value="todos">Todos</option>
+        <option value="aguardando">Aguardando saída</option>
+        <option value="saiu">Saída confirmada</option>
+      </select>
+    </div>
+
     <!-- Lista -->
     <div class="lista-alunos" id="listaAlunos">
       <p class="carregando-porteiro">Carregando liberações...</p>
@@ -63,6 +65,12 @@
     <div class="sem-registros" id="semRegistros">
       <i class="fa-solid fa-circle-check"></i>
       <p>Nenhum aluno aguardando saída no momento.</p>
+    </div>
+
+    <!-- Estado: nenhum resultado para a busca/filtro -->
+    <div class="sem-registros" id="semResultadosBusca" style="display:none;">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <p>Nenhum aluno encontrado para essa busca.</p>
     </div>
 
   </main>
@@ -80,6 +88,25 @@
           <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
           <button class="btn-ok" onclick="executarConfirmacao()">
             <i class="fa-solid fa-check"></i> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP de confirmação de saída da conta -->
+  <div class="modal-overlay" id="modalConfirmarSair">
+    <div class="modal">
+      <div class="modal-header modal-header-alerta">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <h2>Sair da conta</h2>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja sair da sua conta?</p>
+        <div class="modal-buttons">
+          <button class="btn-cancelar" onclick="fecharConfirmarSair()">Cancelar</button>
+          <button class="btn-ok" onclick="sair()">
+            <i class="fa-solid fa-right-from-bracket"></i> Sair
           </button>
         </div>
       </div>

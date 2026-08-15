@@ -7,9 +7,8 @@ body {
     background:var(--fundo-pagina);
     min-height:100vh;
     opacity:1;
-    transform:translateX(0);
     transition:opacity .32s ease, transform .32s ease;
-    animation:entradaDePagina .4s ease both;
+    animation:entradaDePagina .4s ease;
 }
 body.fade-out { opacity:0; }
 
@@ -17,10 +16,20 @@ body.fade-out { opacity:0; }
 body.sai-esquerda{ opacity:0; transform:translateX(-40px); }
 body.sai-direita { opacity:0; transform:translateX(40px); }
 
-/* Entrada: roda automaticamente assim que qualquer página termina de carregar */
+/* Entrada: roda automaticamente assim que qualquer página termina de carregar.
+   Dois cuidados aqui, os dois pelo mesmo motivo — evitar que o <body> fique
+   com QUALQUER transform (mesmo um "zerado") depois que a animação termina,
+   porque isso vira uma referência de posicionamento errada pra qualquer
+   elemento com position:fixed dentro da página (ex.: os modais), fazendo-os
+   se centralizar em relação à altura do <body> inteiro em vez da tela:
+   1. o estado final usa "transform:none" (não "translateY(0)");
+   2. a animação NÃO usa fill-mode "both" — assim, quando ela termina, o
+      <body> volta a herdar o "transform:none" normal do CSS acima, em vez
+      de ficar preso pra sempre no valor calculado (uma matriz) do último
+      quadro da animação. */
 @keyframes entradaDePagina{
     from{ opacity:0; transform:translateY(14px); }
-    to  { opacity:1; transform:translateY(0); }
+    to  { opacity:1; transform:none; }
 }
 
 /* ── Header ── */

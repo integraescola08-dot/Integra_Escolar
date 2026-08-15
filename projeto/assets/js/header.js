@@ -37,6 +37,21 @@ function enviarDadosParaFrame(frame){
 // ele manda {tipo:'integra:pedir-usuario'} e a gente reenvia.
 window.addEventListener('message', function(e){
     if(e.origin !== window.location.origin) return;
+    if(e.data && e.data.tipo === 'integra:usuario-atualizado' && e.data.usuario){
+        localStorage.setItem('usuarioIntegra', JSON.stringify(e.data.usuario));
+        if(e.data.token) localStorage.setItem('integraToken', e.data.token);
+        const frames = document.querySelectorAll('.panel-iframe');
+        frames.forEach(f => {
+            if(f.contentWindow && f.contentWindow !== e.source){
+                f.contentWindow.postMessage({
+                    tipo: 'integra:usuario',
+                    usuario: e.data.usuario,
+                    apiUrl: (typeof API_URL !== 'undefined') ? API_URL : null
+                }, window.location.origin);
+            }
+        });
+        return;
+    }
     if(e.data && e.data.tipo === 'integra:pedir-usuario'){
         const frames = document.querySelectorAll('.panel-iframe');
         frames.forEach(f => {
@@ -60,9 +75,7 @@ function irPainel(nomePainel, elemento){
     const mapaIframes = {
         historico: { id: 'frameHistorico', src: 'historico.html' },
         configuracoes: { id: 'frameConfiguracoes', src: 'configuracoes-gerais.html' },
-        'meus-estudantes': { id: 'frameMeusEstudantes', src: 'meus-estudantes.html' },
-        'contato-ajuda': { id: 'frameContatoAjuda', src: 'contato-ajuda.html' },
-        sobre: { id: 'frameSobre', src: 'sobre.html' }
+        'meus-estudantes': { id: 'frameMeusEstudantes', src: 'meus-estudantes.html' }
     };
     const info = mapaIframes[nomePainel];
     if(info){

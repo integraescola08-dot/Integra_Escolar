@@ -20,20 +20,28 @@
         <i class="fa-solid fa-users-gear"></i>
         <span>Gestão</span>
       </div>
-      <div class="menu" onclick="abrirMenu()">
-        <i class="fa-solid fa-bars"></i>
-      </div>
-    </div>
-    <div class="dropdown-menu" id="dropdownMenu">
-      <div class="menu-item"><i class="fa-regular fa-user"></i><span>Meu Perfil</span></div>
-      <div class="menu-item"><i class="fa-regular fa-clock"></i><span>Histórico</span></div>
-      <div class="menu-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></div>
-      <div class="menu-item sair" onclick="sair()">
-        <i class="fa-solid fa-right-from-bracket"></i><span>Sair</span>
-      </div>
-    </div>
+      <button class="btn-sair-top" onclick="abrirConfirmarSair()">
+        <i class="fa-solid fa-right-from-bracket"></i> Sair
+      </button>
+        <nav class="quick-menu">
+
+        <a href="#" class="quick-item active" data-panel="home" onclick="irPainel('home',this); return false;">
+            <i class="fa-solid fa-house"></i>
+            <span>Tela Inicial</span>
+        </a>
+
+        <a href="#" class="quick-item" data-panel="historico-gestao" onclick="irPainel('historico-gestao',this); return false;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Histórico</span>
+        </a>
+    </nav>
   </header>
 
+  <div class="slide-viewport">
+    <div class="slide-track" id="slideTrack" data-active="home">
+
+      <!-- Painel 1: Início (conteúdo atual do painel da gestão) -->
+      <section class="slide-panel" data-panel="home">
   <div class="container">
     <div class="painel">
 
@@ -72,6 +80,7 @@
           <div class="campo-data">
             <input type="date" id="dataFiltro">
           </div>
+          <button type="button" class="btn-atualizar" id="btn-atualizar" title="Atualizar ocorrências"><i class="fa-solid fa-rotate"></i> Atualizar</button>
         </div>
 
         <div class="tabs">
@@ -186,6 +195,15 @@
       </div>
     </div>
   </div>
+      </section>
+
+      <!-- Painel 2: Histórico (todas as ocorrências da escola, isolado em iframe) -->
+      <section class="slide-panel" data-panel="historico-gestao">
+        <iframe class="panel-iframe" id="frameHistorico" src="historico-gestao.html" title="Histórico"></iframe>
+      </section>
+
+    </div>
+  </div>
 
   <!-- Modal analisar atestado -->
   <div class="modal-overlay" id="modal">
@@ -228,6 +246,44 @@
         <div class="acoes">
           <button class="cancelar" onclick="fecharModalLiberacao()">Cancelar</button>
           <button class="confirmar" onclick="confirmarDecisaoLiberacao()">Confirmar e Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP de confirmação de saída -->
+  <div class="modal-overlay" id="modalConfirmar">
+    <div class="modal">
+      <div class="modal-header">
+        <i class="fa-solid fa-circle-check"></i>
+        <h2>Confirmar Saída</h2>
+      </div>
+      <div class="modal-body">
+        <p id="textoConfirmar"></p>
+        <div class="modal-buttons">
+          <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+          <button class="btn-ok" onclick="executarConfirmacao()">
+            <i class="fa-solid fa-check"></i> Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP de confirmação de saída da conta -->
+  <div class="modal-overlay" id="modalConfirmarSair">
+    <div class="modal">
+      <div class="modal-header modal-header-alerta">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <h2>Sair da conta</h2>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja sair da sua conta?</p>
+        <div class="modal-buttons">
+          <button class="btn-cancelar" onclick="fecharConfirmarSair()">Cancelar</button>
+          <button class="btn-ok" onclick="sair()">
+            <i class="fa-solid fa-right-from-bracket"></i> Sair
+          </button>
         </div>
       </div>
     </div>

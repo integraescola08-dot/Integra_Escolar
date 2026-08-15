@@ -31,13 +31,6 @@ function configurarDescricaoObrigatoriaLiberacao() {
   atualizar();
 }
 
-function validarDataLiberacao(data, anoAtual) {
-  if (!data) return false;
-  const min = `${anoAtual}-01-01`;
-  const max = `${anoAtual}-12-31`;
-  return data >= min && data <= max;
-}
-
 function configurarCalendarioLiberacao() {
   const input = document.getElementById('dataLiberacao');
   if (!input) return;
@@ -46,25 +39,14 @@ function configurarCalendarioLiberacao() {
   const hojeIso = `${ano}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
   input.min = hojeIso;
   input.max = `${ano}-12-31`;
-
-  const verificarData = async () => {
+  input.addEventListener('change', () => {
     if (!input.value) return;
-    if (!validarDataLiberacao(input.value, ano)) {
-      alert(`A data da liberação deve estar no ano atual (${ano}).`);
-      input.value = '';
-      return;
-    }
     const dia = new Date(input.value + 'T00:00:00').getDay();
     if (dia === 0 || dia === 6) {
       alert('A liberação deve ser solicitada para um dia letivo, de segunda a sexta-feira.');
       input.value = '';
-      return;
     }
-    await atualizarLimitesHorario();
-  };
-
-  input.addEventListener('input', verificarData);
-  input.addEventListener('change', verificarData);
+  });
 }
 
 async function carregarAlunos() {
@@ -79,7 +61,6 @@ async function carregarAlunos() {
     alunosPorMatricula = Object.fromEntries(alunos.map(a => [String(a.matricula), a]));
     select.innerHTML = '<option value="" disabled selected>Selecione o estudante...</option>';
     alunos.forEach(a => select.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(a.matricula)}">${escapeHtml(a.nome)} - ${escapeHtml(a.turma)}</option>`));
-    select.addEventListener('change', atualizarLimitesHorario);
     const pre = new URLSearchParams(window.location.search).get('matricula');
     if (pre) select.value = pre;
     if (submit) submit.disabled = alunos.length === 0;
@@ -89,38 +70,6 @@ async function carregarAlunos() {
   }
 }
 
-const DIAS = ['Domingo','Segunda','Terca','Quarta','Quinta','Sexta','Sabado'];
-
-async function atualizarLimitesHorario() {
-  const matricula = document.getElementById('estudante')?.value;
-  const data = document.getElementById('dataLiberacao')?.value;
-  const hora = document.getElementById('horaLiberacao');
-  if (!matricula || !data || !hora) return;
-  const aluno = alunosPorMatricula[String(matricula)];
-  if (!aluno?.turma) return;
-  try {
-    const resp = await apiFetch(`${API_URL}/horarios?turma=${encodeURIComponent(aluno.turma)}`);
-    if (!resp.ok) throw new Error();
-    const horarios = await resp.json();
-    const diaNome = DIAS[new Date(data + 'T00:00:00').getDay()];
-    const aulas = horarios.filter(h => h.dia_da_semana === diaNome);
-    if (!aulas.length) {
-      hora.value = '';
-      hora.removeAttribute('min');
-      hora.removeAttribute('max');
-      alert('Não existe grade de aula cadastrada para essa turma nessa data.');
-      return;
-    }
-    const inicios = aulas.map(a => String(a.hr_inicio).slice(0,5)).sort();
-    const finais = aulas.map(a => String(a.hr_final).slice(0,5)).sort();
-    hora.min = inicios[0];
-    hora.max = finais[finais.length-1];
-    if (hora.value && (hora.value < hora.min || hora.value > hora.max)) hora.value = '';
-  } catch {
-    hora.removeAttribute('min');
-    hora.removeAttribute('max');
-  }
-}
 
 document.getElementById('formLiberacao')?.addEventListener('submit', async function (e) {
   e.preventDefault();
@@ -130,19 +79,23 @@ document.getElementById('formLiberacao')?.addEventListener('submit', async funct
   const motivo = document.getElementById('motivo').value;
   const quemBusca = document.getElementById('quemBusca').value;
   const observacoes = document.getElementById('observacoes').value;
-  const horaInput = document.getElementById('horaLiberacao');
-
   if (!estudante || !data || !hora || !motivo || !quemBusca) { alert('Preencha todos os campos obrigatórios.'); return; }
-  const anoAtual = new Date().getFullYear();
-  const minData = `${anoAtual}-01-01`;
-  const maxData = `${anoAtual}-12-31`;
-  if (data < minData || data > maxData) {
-    alert(`A data da liberação deve estar dentro do ano atual (${anoAtual}).`);
+  if ((motivo === 'Outro' || quemBusca === 'Outro') && !observacoes.trim()) { alert('Preencha a descrição para a opção selecionada.'); return; }
+
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const hojeIso = `${ano}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
+  if (data < hojeIso || !data.startsWith(String(ano))) {
+    alert('A liberação deve ser solicitada para hoje ou uma data futura dentro do ano vigente.');
     return;
   }
-  if ((motivo === 'Outro' || quemBusca === 'Outro') && !observacoes.trim()) { alert('Preencha a descrição para a opção selecionada.'); return; }
-  if (horaInput.min && hora < horaInput.min || horaInput.max && hora > horaInput.max) {
-    alert(`O horário deve estar dentro da grade da turma (${horaInput.min}–${horaInput.max}).`);
+  const dia = new Date(data + 'T00:00:00').getDay();
+  if (dia === 0 || dia === 6) {
+    alert('A liberação deve ser solicitada de segunda a sexta-feira.');
+    return;
+  }
+  if (hora < '07:30' || hora > '17:00') {
+    alert('O horário de saída deve estar entre 07:30 e 17:00.');
     return;
   }
 

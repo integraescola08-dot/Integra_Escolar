@@ -11,6 +11,11 @@ ocorrencias_bp = Blueprint('ocorrencias', __name__)
 
 DIAS = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo']
 
+# Regras gerais do horário escolar para solicitações de saída.
+# O responsável não precisa conhecer a grade de cada aula.
+HORA_SAIDA_MIN = '07:30'
+HORA_SAIDA_MAX = '17:00'
+
 
 def _datas_entre(inicio, fim):
     atual = inicio
@@ -131,8 +136,8 @@ def criar_atestado():
     if not matricula or not arquivo or not data_inicio:
         return jsonify({'erro': 'Matrícula, data e arquivo são obrigatórios.'}), 400
     matricula = str(matricula).strip()
-    if not matricula.isdigit() or len(matricula) != 12:
-        return jsonify({'erro': 'A matrícula deve conter exatamente 12 dígitos.'}), 400
+    if not matricula.isdigit() or not 6 <= len(matricula) <= 12:
+        return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
     aluno = fetch_one(
         'SELECT matricula FROM Aluno WHERE matricula = %s AND id_responsavel = %s AND ativo = TRUE',
         (matricula, id_responsavel)
@@ -142,9 +147,14 @@ def criar_atestado():
     try:
         inicio = date.fromisoformat(data_inicio)
         fim = date.fromisoformat(data_fim)
+        hoje = date.today()
+        if inicio.year != hoje.year or fim.year != hoje.year:
+            raise ValueError('ano')
         if fim < inicio:
-            raise ValueError
-    except ValueError:
+            raise ValueError('ordem')
+    except ValueError as exc:
+        if str(exc) == 'ano':
+            return jsonify({'erro': 'O período do atestado deve estar dentro do ano vigente.'}), 400
         return jsonify({'erro': 'Período do atestado inválido.'}), 400
 
     extensao = Path(arquivo.filename or '').suffix.lower()
@@ -171,26 +181,51 @@ def criar_liberacao():
     if any(not dados.get(campo) for campo in obrigatorios):
         return jsonify({'erro': 'Preencha todos os campos obrigatórios.'}), 400
     matricula = str(dados.get('matricula') or '').strip()
-    if not matricula.isdigit() or len(matricula) != 12:
-        return jsonify({'erro': 'A matrícula deve conter exatamente 12 dígitos.'}), 400
+    if not matricula.isdigit() or not 6 <= len(matricula) <= 12:
+        return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
     aluno = fetch_one(
         'SELECT matricula FROM Aluno WHERE matricula = %s AND id_responsavel = %s AND ativo = TRUE',
         (matricula, id_responsavel)
     )
     if not aluno:
         return jsonify({'erro': 'Este estudante não está vinculado ao responsável logado.'}), 403
-    descricao = dados.get('motivo') + (f". {dados.get('observacoes')}" if dados.get('observacoes') else '')
+    try:
+        data_saida = date.fromisoformat(str(dados.get('data_saida')))
+        hora_saida = datetime.strptime(str(dados.get('hora_saida')), '%H:%M').time()
+    except (ValueError, TypeError):
+        return jsonify({'erro': 'Data ou horário de saída inválido.'}), 400
+
+    hoje = date.today()
+    if data_saida < hoje:
+        return jsonify({'erro': 'A liberação só pode ser solicitada para hoje ou uma data futura.'}), 400
+    if data_saida.year != hoje.year:
+        return jsonify({'erro': 'A liberação deve estar dentro do ano vigente.'}), 400
+    if data_saida.weekday() >= 5:
+        return jsonify({'erro': 'A liberação deve ser solicitada de segunda a sexta-feira.'}), 400
+
+    hora_min = datetime.strptime(HORA_SAIDA_MIN, '%H:%M').time()
+    hora_max = datetime.strptime(HORA_SAIDA_MAX, '%H:%M').time()
+    if not (hora_min <= hora_saida <= hora_max):
+        return jsonify({'erro': f'O horário de saída deve estar entre {HORA_SAIDA_MIN} e {HORA_SAIDA_MAX}.'}), 400
+
+    observacoes = str(dados.get('observacoes') or '').strip()
+    motivo = str(dados.get('motivo') or '').strip()
+    quem_busca = str(dados.get('quem_busca') or 'Responsável').strip()
+    if (motivo == 'Outro' or quem_busca == 'Outro') and not observacoes:
+        return jsonify({'erro': 'Informe a descrição para a opção selecionada.'}), 400
+
+    descricao = motivo + (f'. {observacoes}' if observacoes else '')
     id_oc = execute('''
         INSERT INTO Ocorrencia
         (categoria, tipo_ocorrencia, descricao, data_inicio_oc, data_fim_oc, hora_saida, quem_busca, id_responsavel)
         VALUES ('Liberacao', 'Saida Antecipada', %s, %s, %s, %s, %s, %s)
-    ''', (descricao, dados.get('data_saida'), dados.get('data_saida'), dados.get('hora_saida'), dados.get('quem_busca') or 'Responsável', id_responsavel))
+    ''', (descricao, data_saida, data_saida, hora_saida.strftime('%H:%M:%S'), quem_busca, id_responsavel))
     execute('INSERT INTO Ocorrencia_Aluno (id_ocorrencia, matricula) VALUES (%s, %s)', (id_oc, matricula))
     return jsonify({'mensagem': 'Solicitação de liberação enviada com sucesso.', 'id_ocorrencia': id_oc}), 201
 
 
 @ocorrencias_bp.route('/<int:id_ocorrencia>/decidir', methods=['PUT'])
-@papel_obrigatorio('gestao')
+@papel_obrigatorio('gestao', 'administrador')
 def decidir_ocorrencia(id_ocorrencia):
     dados = request.get_json() or {}
     decisao = dados.get('decisao')

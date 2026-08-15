@@ -23,13 +23,19 @@
 
   // ── Busca os dados reais na API ──────────────────────────────────────────
   async function carregarHistorico() {
-    if (!USUARIO || !USUARIO.pessoa || !API_BASE) return;
-    const idResponsavel = USUARIO.pessoa.id;
+    if (!USUARIO || !API_BASE) return;
+
+    // Responsável só vê o histórico dos próprios filhos; gestão e
+    // administrador acompanham as ocorrências de todos os alunos da escola.
+    const ehResponsavel = USUARIO.perfil === 'responsavel';
+    if (ehResponsavel && !USUARIO.pessoa) return;
+
+    const filtroResponsavel = ehResponsavel ? `&id_responsavel=${USUARIO.pessoa.id}` : '';
 
     try {
       const [respAtestados, respLiberacoes] = await Promise.all([
-        apiFetch(`${API_BASE}/ocorrencias?categoria=Atestado&id_responsavel=${idResponsavel}`),
-        apiFetch(`${API_BASE}/ocorrencias?categoria=Liberacao&id_responsavel=${idResponsavel}`)
+        apiFetch(`${API_BASE}/ocorrencias?categoria=Atestado${filtroResponsavel}`),
+        apiFetch(`${API_BASE}/ocorrencias?categoria=Liberacao${filtroResponsavel}`)
       ]);
       const dadosAtestados = await respAtestados.json();
       const dadosLiberacoes = await respLiberacoes.json();
@@ -72,7 +78,10 @@
       arquivo: o.arquivo,
       observacao,
       mensagemGestao: o.resposta_gestao,
-      dataDecisao: null
+      dataDecisao: null,
+      aprovadorId: o.aprovador_id,
+      aprovadorNome: o.aprovador_nome,
+      aprovadorPerfil: o.aprovador_perfil
     };
   }
 
@@ -88,7 +97,10 @@
       status: statusDaOcorrencia(o),
       responsavel: o.responsavel_nome,
       mensagemGestao: o.resposta_gestao,
-      dataDecisao: null
+      dataDecisao: null,
+      aprovadorId: o.aprovador_id,
+      aprovadorNome: o.aprovador_nome,
+      aprovadorPerfil: o.aprovador_perfil
     };
   }
 
@@ -118,9 +130,10 @@
     return `<span class="badge ${status}">${badgeIcon(status)} ${STATUS_LABEL[status]}</span>`;
   }
 
-  // ── Botão de cancelar (só enquanto pendente) ────────────────────────────────
+  // ── Botão de cancelar (só enquanto pendente, e só para o próprio responsável) ──
   function botaoCancelar(id, status) {
     if (status !== 'pendente') return '';
+    if (!USUARIO || USUARIO.perfil !== 'responsavel') return '';
     return `<button class="btn-cancelar" onclick="cancelarOcorrencia(${id})">${ICON_X} Cancelar solicitação</button>`;
   }
 
@@ -146,16 +159,41 @@
     }
   }
 
-  function gestaoBlock(status, msg, data) {
-    if (!msg) return '';
+  function gestaoBlock(status, msg, data, aprovadorId, aprovadorNome, aprovadorPerfil) {
+    if (!msg && !aprovadorId) return '';
+    const decisao = aprovadorId ? `
+      <div class="gestao-aprovador">
+        <strong>${status === 'aprovado' ? 'Aprovado' : 'Rejeitado'} por:</strong>
+        ${escapeHtml(aprovadorNome || 'Usuário')} — ${escapeHtml(aprovadorPerfil || 'Usuário')}
+        <span class="gestao-aprovador-id">ID ${escapeHtml(aprovadorId)}</span>
+      </div>` : '';
     return `
       <div class="gestao-msg ${status}">
         ${ICON_MSG}
         <div>
-          <div class="gestao-msg-label">Mensagem da Gestão${data ? ' — ' + escapeHtml(data) : ''}</div>
-          <div class="gestao-msg-text">${escapeHtml(msg)}</div>
+          ${decisao}
+          ${msg ? `<div class="gestao-msg-label">Mensagem da Gestão${data ? ' — ' + escapeHtml(data) : ''}</div>
+          <div class="gestao-msg-text">${escapeHtml(msg)}</div>` : ''}
         </div>
       </div>`;
+  }
+
+  // Abre o anexo (atestado/declaração) enviado pelo responsável. Não usamos um
+  // <a href> comum porque o arquivo fica atrás de login (token no header) —
+  // então baixamos com apiFetch e abrimos o resultado como blob numa aba nova.
+  async function abrirAnexo(evento, nomeArquivo) {
+    evento.preventDefault();
+    try {
+      const resposta = await apiFetch(`${window.location.origin}/uploads/${encodeURIComponent(nomeArquivo)}`);
+      if (!resposta.ok) throw new Error('Não foi possível abrir o arquivo.');
+      const blob = await resposta.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      // Libera a memória depois de um tempo — a aba já teve tempo de carregar o arquivo.
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (erro) {
+      alert(erro.message || 'Não foi possível abrir o arquivo.');
+    }
   }
 
   // ── Render de atestado ─────────────────────────────────────────────────────
@@ -174,10 +212,10 @@
           ${badge(a.status)}
         </div>
         <div class="info-box">
-          <div class="info-box-row">${ICON_FILE} ${escapeHtml(a.arquivo)}</div>
+          <div class="info-box-row"> <a href="#" onclick="abrirAnexo(event, '${escapeHtml(a.arquivo)}')" style="display: flex; align-items: center; gap: 8px; color: #1a56a0; text-decoration: none; font-weight: 600; cursor: pointer;"> ${ICON_FILE} Visualizar documento (${escapeHtml(a.arquivo)}) </a> </div>
           ${a.observacao ? `<div class="info-box-row" style="color:#64748b;font-style:italic">${escapeHtml(a.observacao)}</div>` : ''}
         </div>
-        ${gestaoBlock(a.status, a.mensagemGestao, a.dataDecisao)}
+        ${gestaoBlock(a.status, a.mensagemGestao, a.dataDecisao, a.aprovadorId, a.aprovadorNome, a.aprovadorPerfil)}
         ${botaoCancelar(a.id, a.status)}
       </div>`;
   }
@@ -204,7 +242,7 @@
           </div>
           <div class="info-box-row">${ICON_USER} <strong style="color:#475569">Responsável:</strong> ${escapeHtml(l.responsavel)}</div>
         </div>
-        ${gestaoBlock(l.status, l.mensagemGestao, l.dataDecisao)}
+        ${gestaoBlock(l.status, l.mensagemGestao, l.dataDecisao, l.aprovadorId, l.aprovadorNome, l.aprovadorPerfil)}
         ${botaoCancelar(l.id, l.status)}
       </div>`;
   }
@@ -307,3 +345,5 @@
       input.max = `${anoAtual}-12-31`;
     });
   })();
+
+  

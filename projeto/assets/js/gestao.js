@@ -100,6 +100,11 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
     const statusClasse = status === 'aprovado' ? 'aprovado' : status === 'rejeitado' ? 'rejeitado' : 'pendente';
     const statusTexto = status === 'aprovado' ? '✓ Aprovado' : status === 'rejeitado' ? '✕ Rejeitado' : '<i class="fa-regular fa-clock"></i> Pendente';
     const iconeClasse = status === 'aprovado' ? 'verde' : status === 'rejeitado' ? 'vermelho' : 'amarelo';
+    const decisaoPor = o.aprovador_id ? `
+      <div class="aprovador-info">
+        <i class="fa-solid fa-user-check"></i>
+        <span>${status === 'aprovado' ? 'Aprovado' : 'Rejeitado'} por <strong>${escapeHtml(o.aprovador_nome || 'Usuário')}</strong> — ${escapeHtml(o.aprovador_perfil || 'Usuário')} <small>(ID ${escapeHtml(o.aprovador_id)})</small></span>
+      </div>` : '';
 
     const div = document.createElement('div');
     div.className = `item ${status !== 'pendente' ? 'historico' : ''}`;
@@ -123,6 +128,7 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
       ${arquivo}
       <div class="obs">"${escapeHtml(o.descricao || '')}"</div>
       ${quemBusca}
+      ${decisaoPor}
       ${botao}`;
     (status === 'pendente' ? pendentes : historico).appendChild(div);
   });
@@ -229,3 +235,20 @@ async function abrirAnexo(evento, nomeArquivo) {
     alert(erro.message || 'Não foi possível abrir o arquivo.');
   }
 }
+document.getElementById('modalConfirmar').addEventListener('click', e => {
+  if (e.target === e.currentTarget) fecharModal();
+});
+
+function abrirConfirmarSair() {
+  document.getElementById('modalConfirmarSair').classList.add('show');
+}
+
+function fecharConfirmarSair() {
+  document.getElementById('modalConfirmarSair').classList.remove('show');
+}
+
+document.getElementById('modalConfirmarSair').addEventListener('click', e => {
+  if (e.target === e.currentTarget) fecharConfirmarSair();
+});
+
+carregarLiberacoes();

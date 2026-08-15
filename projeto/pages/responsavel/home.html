@@ -22,12 +22,7 @@
         <span>Responsável</span>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" onclick="irPainel('contato-ajuda')" title="Contato e Ajuda" aria-label="Contato e Ajuda">
-          <i class="fa-regular fa-circle-question"></i>
-        </button>
-        <button class="icon-btn" onclick="irPainel('sobre')" title="Sobre o Integra Escolar" aria-label="Sobre o Integra Escolar">
-          <img src="../../assets/img/logo-branca.png" alt="">
-        </button>
+        <button class="icon-btn sair-btn" onclick="sair()" title="Sair da conta" aria-label="Sair da conta"><i class="fa-solid fa-right-from-bracket"></i></button>
       </div>
     </div>
     <nav class="quick-menu">
@@ -101,16 +96,6 @@
         <iframe class="panel-iframe" id="frameMeusEstudantes" title="Meus Estudantes"></iframe>
       </section>
 
-      <!-- Painel 5: Contato da Escola / Ajuda -->
-      <section class="slide-panel" data-panel="contato-ajuda">
-        <iframe class="panel-iframe" id="frameContatoAjuda" title="Contato e Ajuda"></iframe>
-      </section>
-
-      <!-- Painel 6: Sobre o Integra Escolar -->
-      <section class="slide-panel" data-panel="sobre">
-        <iframe class="panel-iframe" id="frameSobre" title="Sobre o Integra Escolar"></iframe>
-      </section>
-
     </div>
   </div>
 
@@ -121,7 +106,7 @@
     // (ex.: home.html?painel=meus-estudantes), já abre ele direto.
     (function () {
       const painel = new URLSearchParams(window.location.search).get('painel');
-      const paineisValidos = ['historico', 'configuracoes', 'meus-estudantes', 'contato-ajuda', 'sobre'];
+      const paineisValidos = ['historico', 'configuracoes', 'meus-estudantes'];
       if (painel && paineisValidos.includes(painel)) {
         irPainel(painel);
       }

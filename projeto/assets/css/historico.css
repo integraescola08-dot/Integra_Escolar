@@ -304,3 +304,20 @@
       .data-field, .filter-select { width: 100%; }
       .item-top { flex-direction: column; align-items: flex-start; }
     }
+
+
+.gestao-aprovador {
+  margin-bottom: 6px;
+  color: #334155;
+  font-size: 13px;
+}
+.gestao-aprovador-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}

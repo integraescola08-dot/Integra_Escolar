@@ -70,9 +70,52 @@ function renderizarLiberacao(o) {
     </div>`;
 }
 
+function normalizarTextoPorteiro(valor) {
+  return String(valor ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function renderizarListaFiltrada() {
+  const lista = document.getElementById('listaAlunos');
+  const vazio = document.getElementById('semRegistros');
+  const semResultados = document.getElementById('semResultadosBusca');
+
+  if (!LIBERACOES.length) {
+    lista.innerHTML = '';
+    vazio.style.display = 'block';
+    semResultados.style.display = 'none';
+    return;
+  }
+
+  const termo = normalizarTextoPorteiro(document.getElementById('busca-porteiro').value.trim());
+  const status = document.getElementById('filtro-status-porteiro').value;
+
+  const filtradas = LIBERACOES.filter(o => {
+    const statusItem = o.saida_confirmada ? 'saiu' : 'aguardando';
+    const combinaStatus = status === 'todos' || status === statusItem;
+    const combinaBusca = !termo
+      || normalizarTextoPorteiro(o.aluno_nome).includes(termo)
+      || normalizarTextoPorteiro(o.aluno_turma).includes(termo);
+    return combinaStatus && combinaBusca;
+  });
+
+  vazio.style.display = 'none';
+  if (!filtradas.length) {
+    lista.innerHTML = '';
+    semResultados.style.display = 'block';
+    return;
+  }
+
+  semResultados.style.display = 'none';
+  lista.innerHTML = filtradas.map(renderizarLiberacao).join('');
+}
+
 async function carregarLiberacoes() {
   const lista = document.getElementById('listaAlunos');
   const vazio = document.getElementById('semRegistros');
+  const semResultados = document.getElementById('semResultadosBusca');
   try {
     const resposta = await apiFetch(`${API_URL}/ocorrencias?categoria=Liberacao&liberadas=1`);
     const dados = await resposta.json();
@@ -82,14 +125,17 @@ async function carregarLiberacoes() {
     LIBERACOES = ordenadas;
     const aguardando = ordenadas.filter(o => !o.saida_confirmada).length;
     document.getElementById('totalLiberados').textContent = aguardando;
-    lista.innerHTML = ordenadas.map(renderizarLiberacao).join('');
-    vazio.style.display = ordenadas.length ? 'none' : 'block';
+    renderizarListaFiltrada();
   } catch (erro) {
     console.error(erro);
     lista.innerHTML = `<p class="carregando-porteiro">${escaparHtml(erro.message)}</p>`;
     vazio.style.display = 'none';
+    semResultados.style.display = 'none';
   }
 }
+
+document.getElementById('busca-porteiro').addEventListener('input', renderizarListaFiltrada);
+document.getElementById('filtro-status-porteiro').addEventListener('change', renderizarListaFiltrada);
 
 function confirmarSaida(idOcorrencia) {
   liberacaoSelecionada = idOcorrencia;
@@ -120,6 +166,18 @@ async function executarConfirmacao() {
 
 document.getElementById('modalConfirmar').addEventListener('click', e => {
   if (e.target === e.currentTarget) fecharModal();
+});
+
+function abrirConfirmarSair() {
+  document.getElementById('modalConfirmarSair').classList.add('show');
+}
+
+function fecharConfirmarSair() {
+  document.getElementById('modalConfirmarSair').classList.remove('show');
+}
+
+document.getElementById('modalConfirmarSair').addEventListener('click', e => {
+  if (e.target === e.currentTarget) fecharConfirmarSair();
 });
 
 carregarLiberacoes();

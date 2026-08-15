@@ -42,8 +42,8 @@ function exibirMensagem(texto, tipo) {
 document.getElementById('cadastroForm').addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
-  if (matriculaInput.value.trim().length !== 12) {
-    alert('A matrícula deve conter exatamente 12 dígitos.');
+  if (!/^\d{6,12}$/.test(matriculaInput.value.trim())) {
+    alert('A matrícula deve conter entre 6 e 12 dígitos.');
     return;
   }
 

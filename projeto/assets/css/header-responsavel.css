@@ -257,12 +257,12 @@ header {
 
 .slide-track{
     display:flex;
-    width:600%;              /* 6 painéis x 100% cada */
+    width:400%;              /* 4 painéis x 100% cada */
     transition:transform .45s cubic-bezier(.65,0,.35,1);
 }
 
 .slide-panel{
-    width:16.6667%;
+    width:25%;
     flex-shrink:0;
     min-height:calc(100vh - 280px); /* 280px = altura do header */
 }
@@ -275,11 +275,11 @@ header {
 }
 
 .slide-track[data-active="home"]           { transform:translateX(0%); }
-.slide-track[data-active="historico"]      { transform:translateX(-16.6667%); }
-.slide-track[data-active="configuracoes"]  { transform:translateX(-33.3333%); }
-.slide-track[data-active="meus-estudantes"]{ transform:translateX(-50%); }
-.slide-track[data-active="contato-ajuda"]  { transform:translateX(-66.6667%); }
-.slide-track[data-active="sobre"]          { transform:translateX(-83.3333%); }
+.slide-track[data-active="historico"]      { transform:translateX(-25%); }
+.slide-track[data-active="configuracoes"]  { transform:translateX(-50%); }
+.slide-track[data-active="meus-estudantes"]{ transform:translateX(-75%); }
+.slide-track[data-active="contato-ajuda"]  { transform:translateX(-100%); }
+.slide-track[data-active="sobre"]          { transform:translateX(-125%); }
 
 @media(max-width:768px){
   .slide-panel{ min-height:calc(100vh - 190px); }
@@ -294,3 +294,5 @@ header {
   .logo img { width: 130px; }
   .btn-voltar { top: 20px; left: 16px; width: 36px; height: 36px; font-size: 16px; }
 }
+
+.sair-btn{color:var(--branco)}.sair-btn:hover{background:rgba(255,255,255,.22)}

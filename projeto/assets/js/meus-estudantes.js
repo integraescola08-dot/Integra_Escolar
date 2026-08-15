@@ -5,6 +5,7 @@
 
 window.addEventListener('message', function (e) {
   if (e.data && e.data.tipo === 'integra:usuario') {
+    contextoAtual = { usuario: e.data.usuario, apiUrl: e.data.apiUrl };
     carregarEstudantes(e.data.usuario, e.data.apiUrl);
   }
 });
@@ -12,6 +13,10 @@ window.addEventListener('message', function (e) {
 if (window.parent && window.parent !== window) {
   window.parent.postMessage({ tipo: 'integra:pedir-usuario' }, window.location.origin);
 }
+
+// Guarda o contexto (apiUrl) recebido do pai para reutilizar no formulário
+// de vincular estudante, sem precisar pedir de novo.
+let contextoAtual = null;
 
 function getIniciais(nome) {
   return (nome || '')
@@ -91,3 +96,70 @@ function irParaPainel(pagina, matricula) {
     window.location.href = destino;
   }
 }
+
+/* ── Modal: adicionar estudante por matrícula ── */
+const modal = document.getElementById('modal-vincular');
+const formVincular = document.getElementById('form-vincular');
+const inputMatricula = document.getElementById('input-matricula');
+const modalMsg = document.getElementById('modal-msg');
+const btnConfirmar = document.getElementById('btn-confirmar-vincular');
+
+function abrirModal() {
+  modalMsg.hidden = true;
+  formVincular.reset();
+  modal.hidden = false;
+  inputMatricula.focus();
+}
+
+function fecharModal() {
+  modal.hidden = true;
+}
+
+document.getElementById('btn-abrir-vincular').addEventListener('click', abrirModal);
+document.getElementById('btn-cancelar-vincular').addEventListener('click', fecharModal);
+modal.addEventListener('click', e => { if (e.target === modal) fecharModal(); });
+
+inputMatricula.addEventListener('input', () => {
+  inputMatricula.value = inputMatricula.value.replace(/\D/g, '').slice(0, 12);
+});
+
+formVincular.addEventListener('submit', async e => {
+  e.preventDefault();
+  const matricula = inputMatricula.value.trim();
+
+  modalMsg.hidden = true;
+  if (!/^\d{6,12}$/.test(matricula)) {
+    modalMsg.textContent = 'Informe uma matrícula válida (entre 6 e 12 dígitos).';
+    modalMsg.className = 'modal-msg erro';
+    modalMsg.hidden = false;
+    return;
+  }
+  if (!contextoAtual || !contextoAtual.apiUrl) {
+    modalMsg.textContent = 'Não foi possível identificar sua sessão. Recarregue a página.';
+    modalMsg.className = 'modal-msg erro';
+    modalMsg.hidden = false;
+    return;
+  }
+
+  btnConfirmar.disabled = true;
+  btnConfirmar.textContent = 'Vinculando...';
+  try {
+    const resposta = await apiFetch(`${contextoAtual.apiUrl}/alunos/vincular`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matricula })
+    });
+    const resultado = await resposta.json();
+    if (!resposta.ok) throw new Error(resultado.erro || 'Não foi possível vincular o estudante.');
+
+    fecharModal();
+    await carregarEstudantes(contextoAtual.usuario, contextoAtual.apiUrl);
+  } catch (erro) {
+    modalMsg.textContent = erro.message;
+    modalMsg.className = 'modal-msg erro';
+    modalMsg.hidden = false;
+  } finally {
+    btnConfirmar.disabled = false;
+    btnConfirmar.textContent = 'Vincular';
+  }
+});

@@ -52,6 +52,11 @@ def pages(filename):
     return send_from_directory(PAGES_DIR, filename)
 
 
+@app.route('/modelos/modelo_grade_horarios.xlsx')
+def modelo_grade_horarios():
+    return send_from_directory(BASE_DIR / 'modelos', 'modelo_grade_horarios.xlsx', as_attachment=True, download_name='modelo_grade_horarios.xlsx')
+
+
 @app.route('/uploads/<path:filename>')
 @login_obrigatorio
 def uploaded_file(filename):

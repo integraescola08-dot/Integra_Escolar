@@ -37,6 +37,8 @@
     <button data-tab="professores">Professores</button>
     <button data-tab="coordenadores">Coordenadores</button>
     <button data-tab="porteiros">Porteiros</button>
+    <button data-tab="responsaveis">Responsáveis</button>
+    <button data-tab="controle">Atestados e liberações</button>
   </nav>
 
   <section id="turmas" class="painel ativo">
@@ -48,6 +50,10 @@
         <span>Planilha de horários (.xlsx)</span>
         <input name="planilha" type="file" accept=".xlsx" required>
       </label>
+      <div class="modelo-grade">
+        <a href="/modelos/modelo_grade_horarios.xlsx" class="btn-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+        <small>Use este modelo para evitar erros na importação da grade.</small>
+      </div>
       <button>Cadastrar turma e importar grade</button>
     </form>
     <div id="lista-turmas" class="lista"></div>
@@ -56,13 +62,20 @@
   <section id="alunos" class="painel">
     <h2>Cadastrar aluno</h2>
     <form id="form-aluno">
-      <input name="matricula" placeholder="Matrícula (12 dígitos)" inputmode="numeric" minlength="12" maxlength="12" pattern="[0-9]{12}" required>
+      <input name="matricula" placeholder="Matrícula (6 a 12 dígitos)" inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}" required>
       <input name="nome" placeholder="Nome completo" required>
       <select name="turma" required>
         <option value="">Selecione a turma</option>
       </select>
       <button>Cadastrar</button>
     </form>
+
+    <div class="filtros-lista">
+      <input type="search" id="busca-alunos" placeholder="Buscar por nome ou matrícula...">
+      <select id="filtro-turma-alunos">
+        <option value="">Todas as turmas</option>
+      </select>
+    </div>
     <div id="lista-alunos" class="lista"></div>
   </section>
 
@@ -71,7 +84,7 @@
     <form id="form-professor">
       <input name="nome" placeholder="Nome completo" required>
       <input name="email" type="email" placeholder="Email" required>
-      <input name="telefone" placeholder="Telefone">
+      <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
       <select name="id_materia" required>
         <option value="">Selecione a matéria</option>
       </select>
@@ -86,7 +99,7 @@
     <form id="form-coordenador">
       <input name="nome" placeholder="Nome completo" required>
       <input name="email" type="email" placeholder="Email" required>
-      <input name="telefone" placeholder="Telefone">
+      <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
       <button>Cadastrar</button>
     </form>
@@ -94,17 +107,67 @@
   </section>
 
 
+  <section id="responsaveis" class="painel">
+    <h2>Cadastrar responsável</h2>
+    <p class="ajuda-form">O administrador pode cadastrar um responsável quando a família não conseguir concluir o cadastro. O responsável é vinculado diretamente à matrícula do aluno.</p>
+    <form id="form-responsavel">
+      <input name="nome" placeholder="Nome completo" required>
+      <input name="cpf" placeholder="CPF (11 dígitos)" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required>
+      <input name="telefone" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" required>
+      <input name="email" type="email" placeholder="Email" required>
+      <input name="matricula" placeholder="Matrícula do aluno (6 a 12 dígitos)" inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}" required>
+      <input name="senha" type="password" placeholder="Senha inicial (6+ caracteres)" minlength="6" required>
+      <button>Cadastrar responsável</button>
+    </form>
+    <div id="lista-responsaveis" class="lista"></div>
+  </section>
+
   <section id="porteiros" class="painel">
     <h2>Cadastrar porteiro(a)</h2>
     <form id="form-porteiro">
       <input name="nome" placeholder="Nome completo" required>
       <input name="email" type="email" placeholder="Email" required>
-      <input name="telefone" placeholder="Telefone">
+      <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
       <button>Cadastrar</button>
     </form>
     <div id="lista-porteiros" class="lista"></div>
   </section>
+
+  <section id="controle" class="painel">
+    <div class="controle-cabecalho"><div><h2>Atestados e liberações</h2><p class="ajuda-form">O administrador atua como apoio: pode aprovar ou rejeitar solicitações quando necessário e consultar todo o histórico.</p></div><button type="button" id="atualizar-controle" class="btn-atualizar-controle">Atualizar</button></div>
+    <div class="controle-resumo">
+      <article><b id="adm-pend-atestados">0</b><span>Atestados pendentes</span></article><article><b id="adm-pend-liberacoes">0</b><span>Liberações pendentes</span></article><article><b id="adm-total-aprovados">0</b><span>Aprovados</span></article><article><b id="adm-total-rejeitados">0</b><span>Rejeitados</span></article>
+    </div>
+    <div class="filtros-lista filtros-controle"><input type="search" id="busca-ocorrencias-admin" placeholder="Buscar aluno, matrícula ou turma..."><select id="filtro-categoria-admin"><option value="">Atestados e liberações</option><option value="Atestado">Atestados</option><option value="Liberacao">Liberações</option></select><select id="filtro-status-admin"><option value="">Todos os status</option><option value="pendente">Pendentes</option><option value="aprovado">Aprovados</option><option value="rejeitado">Rejeitados</option></select></div>
+    <div id="lista-ocorrencias-admin" class="lista"></div>
+  </section>
+
+  <div id="modal-edicao" class="modal-edicao" hidden>
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="titulo-edicao">
+      <div class="modal-topo"><h2 id="titulo-edicao">Editar cadastro</h2><button type="button" id="fechar-edicao" aria-label="Fechar">×</button></div>
+      <form id="form-edicao"></form>
+    </div>
+  </div>
+
+  <div id="modal-grade" class="modal-edicao" hidden>
+    <div class="modal-conteudo modal-grade-conteudo" role="dialog" aria-modal="true" aria-labelledby="titulo-grade">
+      <div class="modal-topo"><h2 id="titulo-grade">Grade da turma</h2><button type="button" id="fechar-grade" aria-label="Fechar">×</button></div>
+      <div id="conteudo-grade"></div>
+    </div>
+  </div>
+
+  <div id="modal-nova-grade" class="modal-edicao" hidden>
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="titulo-nova-grade">
+      <div class="modal-topo"><h2 id="titulo-nova-grade">Nova grade</h2><button type="button" id="fechar-nova-grade" aria-label="Fechar">×</button></div>
+      <p class="ajuda-form">A grade atual não será apagada: sua vigência será encerrada no dia anterior ao início da nova grade.</p>
+      <form id="form-nova-grade" enctype="multipart/form-data">
+        <label><span>Válida a partir de</span><input name="data_inicio_vigencia" type="date" required></label>
+        <label class="arquivo-grade"><span>Nova planilha (.xlsx)</span><input name="planilha" type="file" accept=".xlsx" required></label>
+        <div class="acoes-modal"><button type="button" id="cancelar-nova-grade" class="btn-cancelar">Cancelar</button><button type="submit">Importar nova grade</button></div>
+      </form>
+    </div>
+  </div>
 
   <div id="mensagem" role="status"></div>
 </main>

@@ -3,6 +3,40 @@
    (header em header.css)
    ============================================================ */
 
+/* ── Botão "Sair" no topo (substitui o menu hambúrguer nesta tela) ── */
+.btn-sair-top {
+  margin-top: 55px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .25);
+  color: var(--branco);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: .2s;
+  font-family: inherit;
+}
+.btn-sair-top:hover { background: rgba(255, 255, 255, .22); }
+
+@media(max-width: 768px) {
+  .btn-sair-top { margin-top: 90px; padding: 9px 14px; font-size: 13px; }
+}
+
+/* ── Esteira deslizante (Início / Histórico) ──
+   Painel da gestão só tem 2 telas nessa esteira, então sobrescreve
+   a matemática de 6 painéis definida em header.css (que é da tela
+   do responsável). */
+.slide-track { width: 200%; }
+.slide-panel { width: 50%; }
+.slide-track[data-active="home"]      { transform: translateX(0%); }
+.slide-track[data-active="historico-gestao"] { transform: translateX(-50%); }
+
+
+
 /* ── Container e painel ── */
 .container {
   max-width: 900px;
@@ -837,3 +871,101 @@ input[type="date"] {
   background: rgba(255,255,255,.25);
   border-color: rgba(255,255,255,.6);
 }
+
+
+.btn-confirmar-saida {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  color: var(--branco);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: .25s;
+  font-family: inherit;
+}
+
+.btn-confirmar-saida:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(26,86,160,.3);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  color: var(--branco);
+  padding: 22px 25px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-header-alerta {
+  background: linear-gradient(135deg, var(--vermelho), #b23837) !important;
+}
+
+.modal-header i { font-size: 22px; }
+
+.modal-header h2 { font-size: 20px; font-weight: 700; }
+
+.modal-body { padding: 25px; }
+
+.modal-body p {
+  line-height: 1.7;
+  color: var(--texto-principal);
+  margin-bottom: 24px;
+  font-size: 15px;
+}
+
+.modal-buttons { display: flex; gap: 12px; }
+
+.btn-cancelar,
+.btn-ok {
+  flex: 1;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .25s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-cancelar {
+  background: var(--azul-claro);
+  color: var(--azul-principal);
+  border: 1.5px solid var(--borda);
+}
+.btn-cancelar:hover { background: var(--borda); }
+
+.btn-ok {
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  color: var(--branco);
+}
+.btn-ok:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26,86,160,.3); }
+
+
+/* Identificação de quem tomou a decisão */
+.aprovador-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+}
+.aprovador-info i { color: #1a56a0; }
+.aprovador-info small { color: #64748b; }

@@ -3,6 +3,29 @@
    (header em header.css)
    ============================================================ */
 
+/* ── Botão "Sair" no topo (substitui o menu hambúrguer nesta tela) ── */
+.btn-sair-top {
+  margin-top: 55px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .25);
+  color: var(--branco);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: .2s;
+  font-family: inherit;
+}
+.btn-sair-top:hover { background: rgba(255, 255, 255, .22); }
+
+@media(max-width: 768px) {
+  .btn-sair-top { margin-top: 90px; padding: 9px 14px; font-size: 13px; }
+}
+
 .container {
   max-width: 900px;
   margin: 40px auto;
@@ -273,3 +296,115 @@
   color:var(--azul-principal); font-size:14px;
 }
 .pergunta-professor { margin: 16px 0 10px; font-weight: 600; color: var(--texto-principal); }
+
+.btn-confirmar-saida {
+  width: 100%;
+  height: 50px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  color: var(--branco);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: .25s;
+  font-family: inherit;
+}
+
+.btn-confirmar-saida:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(26,86,160,.3);
+}
+/* =========================================
+   ESTILOS DO MODAL DE CONFIRMAÇÃO DE SAÍDA 
+   ========================================= */
+.modal-overlay {
+  display: none; /* Mantém escondido por padrão */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.show {
+  display: flex; /* Mostra o modal quando a classe .show é adicionada pelo JS */
+}
+
+.modal {
+  background-color: #ffffff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  background-color: #1a428a;
+  color: #ffffff;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-header-alerta {
+  background-color: #d93025; /* Vermelho para alertar sobre a saída */
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.modal-body {
+  padding: 25px 20px;
+  text-align: center;
+}
+
+.modal-body p {
+  margin-bottom: 25px;
+  font-size: 1rem;
+  color: #333333;
+}
+
+.modal-buttons { display: flex; gap: 12px; }
+
+.btn-cancelar,
+.btn-ok {
+  flex: 1;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .25s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-cancelar {
+  background: var(--azul-claro);
+  color: var(--azul-principal);
+  border: 1.5px solid var(--borda);
+}
+.btn-cancelar:hover { background: var(--borda); }
+
+.btn-ok {
+  background: linear-gradient(135deg, var(--azul-principal), var(--azul-escuro));
+  color: var(--branco);
+}
+.btn-ok:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26,86,160,.3); }

@@ -1,7 +1,7 @@
 -- ============================================================
--- Integra Escolar — Banco oficial V6
+-- Integra Escolar — Banco oficial
 -- ATENÇÃO: este script APAGA e RECRIA o banco integra_escolar.
--- Não contém dados de teste.
+-- Use em uma instalação nova ou somente se você realmente quiser recriar o banco.
 -- ============================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -92,7 +92,7 @@ CREATE TABLE Aluno (
     ativo           BOOLEAN NOT NULL DEFAULT TRUE,
     criado_em       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (matricula),
-    CONSTRAINT chk_aluno_matricula CHECK (matricula REGEXP '^[0-9]{12}$'),
+    CONSTRAINT chk_aluno_matricula CHECK (matricula REGEXP '^[0-9]{6,12}$'),
     CONSTRAINT fk_aluno_turma FOREIGN KEY (turma)
         REFERENCES Turma (codigo)
         ON UPDATE CASCADE ON DELETE RESTRICT,
