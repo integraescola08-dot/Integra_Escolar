@@ -1,26 +1,9 @@
 """
-Integra Escolar — Autenticação por token (JWT)
+Autenticação por token (JWT)
 ================================================
 Centraliza a criação e a validação do token de sessão. Qualquer rota que
-precise saber "quem está fazendo esta chamada" usa os decorators daqui.
-
-Uso nas rotas:
-
-    from auth_utils import login_obrigatorio, papel_obrigatorio
-    from flask import g
-
-    @app.route('/api/alguma-coisa')
-    @login_obrigatorio
-    def minha_rota():
-        usuario_logado = g.usuario   # dados do token (id, perfil, etc.)
-        ...
-
-    @app.route('/api/so-gestao')
-    @papel_obrigatorio('gestao')
-    def outra_rota():
-        ...
+precise saber "quem está fazendo esta chamada" usa os decorators daqui
 """
-
 import os
 import jwt
 from datetime import datetime, timedelta, timezone

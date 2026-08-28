@@ -19,7 +19,8 @@ PAGES_DIR = BASE_DIR / 'pages'
 ASSETS_DIR = BASE_DIR / 'assets'
 
 # Não use a raiz inteira do projeto como pasta estática: isso poderia expor
-# .env, arquivos Python e outros arquivos internos pelo navegador.
+# .env, arquivos Python e outros arquivos internos pelo navegador POR FAVOOOOOOR!!!!
+
 app = Flask(__name__, static_folder=str(ASSETS_DIR), static_url_path='/assets')
 app.config['UPLOAD_FOLDER'] = str(BASE_DIR / 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024

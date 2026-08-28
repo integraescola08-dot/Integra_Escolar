@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Integra Escolar | Administração</title>
+  <link rel="icon" type="image/png" href="../assets/img/Logo casinha- endereço.png">
   <link rel="stylesheet" href="../../assets/css/paleta.css">
   <link rel="stylesheet" href="../../assets/css/admin.css">
 </head>
@@ -32,16 +33,16 @@
   </section>
 
   <nav class="tabs">
-    <button data-tab="turmas" class="ativo">Turmas</button>
+    <button data-tab="professores" class="ativo">Professores</button>
+    <button data-tab="turmas">Turmas</button>
     <button data-tab="alunos">Alunos</button>
-    <button data-tab="professores">Professores</button>
     <button data-tab="coordenadores">Coordenadores</button>
     <button data-tab="porteiros">Porteiros</button>
     <button data-tab="responsaveis">Responsáveis</button>
     <button data-tab="controle">Atestados e liberações</button>
   </nav>
 
-  <section id="turmas" class="painel ativo">
+  <section id="turmas" class="painel">
     <h2>Cadastrar turma</h2>
     <p class="ajuda-form">Cadastre o código da turma e importe a grade no modelo .xlsx. As matérias serão identificadas automaticamente; intervalos, almoço e saída não viram aulas.</p>
     <form id="form-turma" enctype="multipart/form-data">
@@ -79,7 +80,7 @@
     <div id="lista-alunos" class="lista"></div>
   </section>
 
-  <section id="professores" class="painel">
+  <section id="professores" class="painel ativo">
     <h2>Cadastrar professor</h2>
     <form id="form-professor">
       <input name="nome" placeholder="Nome completo" required>
