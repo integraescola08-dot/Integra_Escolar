@@ -197,6 +197,25 @@ form { width:100%; display:flex; flex-direction:column; align-items:center; }
   .perfil-btn{ font-size:14px; padding:0 18px; }
 }
 
+/* Link "Esqueceu sua senha?" dentro do campo de senha */
+.esqueceu-senha {
+  margin-top: 10px;
+  text-align: right;
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+.esqueceu-senha a {
+  color: var(--texto-secundario);
+  text-decoration: none;
+}
+.esqueceu-senha a strong {
+  color: var(--azul-principal);
+  font-weight: 700;
+}
+.esqueceu-senha a:hover strong {
+  text-decoration: underline;
+}
+
 /* Link para a tela de cadastro do responsável */
 .voltar-login {
   margin-top: 20px;

@@ -48,6 +48,11 @@ def cadastro():
     return send_from_directory(BASE_DIR, 'cadastro.html')
 
 
+@app.route('/esqueci-senha.html')
+def esqueci_senha():
+    return send_from_directory(BASE_DIR, 'esqueci-senha.html')
+
+
 @app.route('/pages/<path:filename>')
 def pages(filename):
     return send_from_directory(PAGES_DIR, filename)

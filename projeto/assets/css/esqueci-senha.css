@@ -1,0 +1,49 @@
+/* ============================================================
+   Integra Escolar — Esqueci minha senha
+   Reaproveita o card e o fundo de login.css; aqui só ficam os
+   ajustes específicos desta tela.
+   ============================================================ */
+
+.recuperar-card {
+  min-height: auto;
+  max-width: 620px;
+}
+
+.recuperar-card .card-content {
+  padding: 50px 48px 56px;
+  align-items: center;
+}
+
+.recuperar-icone {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--azul-claro);
+  color: var(--azul-principal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 26px;
+}
+.recuperar-icone svg { width: 34px; height: 34px; }
+
+.recuperar-texto {
+  text-align: center;
+  color: var(--texto-principal);
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 460px;
+  margin-bottom: 36px;
+}
+.recuperar-texto strong { color: var(--azul-principal); }
+
+/* O botão de voltar aqui é um <a>, não um <button> */
+a.login-button {
+  text-decoration: none;
+  width: 100%;
+  max-width: 390px;
+}
+
+@media (max-width: 580px) {
+  .recuperar-card .card-content { padding: 40px 26px 46px; }
+}
