@@ -150,6 +150,31 @@ def professor_unico_da_materia(cur, id_materia):
     return rows[0][0] if len(rows) == 1 else None
 
 
+def ler_ids_materias(dados):
+    """Lê a lista de matérias do corpo da requisição.
+
+    Aceita 'id_materias' (lista, formato atual) e, por compatibilidade,
+    'id_materia' (valor único, formato antigo).
+    """
+    bruto = dados.get('id_materias')
+    if bruto is None:
+        bruto = dados.get('id_materia')
+        bruto = [bruto] if bruto not in (None, '') else []
+    if not isinstance(bruto, list):
+        bruto = [bruto]
+    ids = []
+    for valor in bruto:
+        try:
+            id_materia = int(valor)
+        except (TypeError, ValueError):
+            raise ValueError('Selecione ao menos uma matéria válida.')
+        if id_materia not in ids:
+            ids.append(id_materia)
+    if not ids:
+        raise ValueError('Selecione ao menos uma matéria para o professor.')
+    return ids
+
+
 @admin_bp.route('/resumo', methods=['GET'])
 @papel_obrigatorio('administrador')
 def resumo():
@@ -260,7 +285,7 @@ def alunos():
     incluir_inativos = request.args.get('incluir_inativos') == '1'
     filtro = '' if incluir_inativos else 'WHERE a.ativo = TRUE'
     return jsonify(fetch_all(f'''
-        SELECT a.matricula, a.nome, a.turma, r.nome AS responsavel, a.ativo
+        SELECT a.matricula, a.nome, a.turma, a.id_responsavel, r.nome AS responsavel, a.ativo
         FROM Aluno a
         LEFT JOIN Responsavel r ON r.id_responsavel = a.id_responsavel
         {filtro}
@@ -493,9 +518,9 @@ def criar_professor():
     senha = str(dados.get('senha') or '')
     telefone = digitos(dados.get('telefone')) or None
     try:
-        id_materia = int(dados.get('id_materia'))
-    except (TypeError, ValueError):
-        return jsonify({'erro': 'Selecione a matéria do professor.'}), 400
+        ids_materias = ler_ids_materias(dados)
+    except ValueError as exc:
+        return jsonify({'erro': str(exc)}), 400
 
     if not nome or not email_normalizado or not senha:
         return jsonify({'erro': 'Nome, email e senha são obrigatórios.'}), 400
@@ -513,10 +538,16 @@ def criar_professor():
     conn = get_connection()
     cur = conn.cursor()
     try:
-        cur.execute('SELECT id_materia FROM Materia WHERE id_materia = %s AND ativo = TRUE', (id_materia,))
-        if not cur.fetchone():
+        cur.execute(
+            'SELECT id_materia FROM Materia WHERE id_materia IN (%s) AND ativo = TRUE'
+            % ','.join(['%s'] * len(ids_materias)),
+            tuple(ids_materias)
+        )
+        encontradas = {row[0] for row in cur.fetchall()}
+        faltando = [i for i in ids_materias if i not in encontradas]
+        if faltando:
             conn.rollback()
-            return jsonify({'erro': 'Matéria não encontrada.'}), 404
+            return jsonify({'erro': 'Uma ou mais matérias selecionadas não foram encontradas.'}), 404
 
         cur.execute('''
             INSERT INTO Usuario (email, senha, telefone, nivel_acesso)
@@ -525,24 +556,27 @@ def criar_professor():
         id_usuario = cur.lastrowid
         cur.execute('INSERT INTO Professor (id_usuario, nome) VALUES (%s, %s)', (id_usuario, nome))
         matricula_professor = cur.lastrowid
-        cur.execute('''
-            INSERT INTO Professor_Materia (matricula_professor, id_materia)
-            VALUES (%s, %s)
-        ''', (matricula_professor, id_materia))
 
-        cur.execute('SELECT COUNT(*) FROM Professor_Materia WHERE id_materia = %s', (id_materia,))
-        total_professores_materia = cur.fetchone()[0]
         aulas_vinculadas = 0
-        if total_professores_materia == 1:
+        for id_materia in ids_materias:
             cur.execute('''
-                UPDATE Horario SET matricula_professor = %s
-                WHERE id_materia = %s AND matricula_professor IS NULL
+                INSERT INTO Professor_Materia (matricula_professor, id_materia)
+                VALUES (%s, %s)
             ''', (matricula_professor, id_materia))
-            aulas_vinculadas = cur.rowcount
+
+            cur.execute('SELECT COUNT(*) FROM Professor_Materia WHERE id_materia = %s', (id_materia,))
+            total_professores_materia = cur.fetchone()[0]
+            if total_professores_materia == 1:
+                cur.execute('''
+                    UPDATE Horario SET matricula_professor = %s
+                    WHERE id_materia = %s AND matricula_professor IS NULL
+                ''', (matricula_professor, id_materia))
+                aulas_vinculadas += cur.rowcount
 
         conn.commit()
+        texto_materias = 'matéria' if len(ids_materias) == 1 else 'matérias'
         return jsonify({
-            'mensagem': 'Professor cadastrado e vinculado à matéria.',
+            'mensagem': f'Professor cadastrado e vinculado à(s) {texto_materias}.',
             'aulas_vinculadas': aulas_vinculadas,
         }), 201
     except IntegrityError as erro:
@@ -673,6 +707,24 @@ def validar_email_disponivel(cur, email_normalizado, id_usuario_atual):
     return cur.fetchone() is None
 
 
+def ler_id_responsavel(dados):
+    """Lê o campo de responsável do corpo da edição de aluno.
+
+    Retorna (informado, valor): 'informado' diz se o campo veio na
+    requisição (para não mexer no vínculo se o front-end nem mandar o
+    campo), e 'valor' é o id do responsável ou None para desvincular.
+    """
+    if 'id_responsavel' not in dados:
+        return False, None
+    bruto = dados.get('id_responsavel')
+    if bruto in (None, ''):
+        return True, None
+    try:
+        return True, int(bruto)
+    except (TypeError, ValueError):
+        raise ValueError('Responsável inválido.')
+
+
 @admin_bp.route('/alunos/<matricula>', methods=['PUT'])
 @papel_obrigatorio('administrador')
 def editar_aluno(matricula):
@@ -684,6 +736,10 @@ def editar_aluno(matricula):
         return jsonify({'erro': 'Nome, turma e matrícula são obrigatórios.'}), 400
     if not nova_matricula.isdigit() or not 6 <= len(nova_matricula) <= 12:
         return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
+    try:
+        informado_responsavel, id_responsavel = ler_id_responsavel(dados)
+    except ValueError as exc:
+        return jsonify({'erro': str(exc)}), 400
     conn = get_connection(); cur = conn.cursor()
     try:
         cur.execute('SELECT matricula FROM Aluno WHERE matricula = %s', (matricula,))
@@ -693,8 +749,14 @@ def editar_aluno(matricula):
         if nova_matricula != matricula:
             cur.execute('SELECT matricula FROM Aluno WHERE matricula = %s', (nova_matricula,))
             if cur.fetchone(): return jsonify({'erro': 'A nova matrícula já está cadastrada.'}), 409
+        if informado_responsavel and id_responsavel is not None:
+            cur.execute('SELECT id_responsavel FROM Responsavel WHERE id_responsavel = %s', (id_responsavel,))
+            if not cur.fetchone(): return jsonify({'erro': 'Responsável não encontrado.'}), 404
         cur.execute('UPDATE Aluno SET matricula=%s, nome=%s, turma=%s WHERE matricula=%s',
                     (nova_matricula, nome, turma, matricula))
+        if informado_responsavel:
+            cur.execute('UPDATE Aluno SET id_responsavel=%s WHERE matricula=%s',
+                        (id_responsavel, nova_matricula))
         conn.commit()
         return jsonify({'mensagem': 'Aluno atualizado com sucesso.', 'matricula': nova_matricula})
     except IntegrityError as exc:
@@ -709,8 +771,8 @@ def editar_professor(matricula):
     dados = request.get_json() or {}
     nome = texto(dados.get('nome')); email_normalizado = email(dados.get('email'))
     telefone = digitos(dados.get('telefone')) or None
-    try: id_materia = int(dados.get('id_materia'))
-    except (TypeError, ValueError): return jsonify({'erro': 'Selecione a matéria do professor.'}), 400
+    try: ids_materias = ler_ids_materias(dados)
+    except ValueError as exc: return jsonify({'erro': str(exc)}), 400
     if not nome or not email_normalizado: return jsonify({'erro': 'Nome e email são obrigatórios.'}), 400
     if telefone and len(telefone) not in (10, 11): return jsonify({'erro': 'O telefone deve conter 10 ou 11 dígitos.'}), 400
     conn=get_connection(); cur=conn.cursor()
@@ -719,16 +781,37 @@ def editar_professor(matricula):
         if not row: return jsonify({'erro': 'Professor não encontrado.'}), 404
         id_usuario=row[0]
         if not validar_email_disponivel(cur, email_normalizado, id_usuario): return jsonify({'erro':'Este email já está cadastrado.'}),409
-        cur.execute('SELECT id_materia FROM Materia WHERE id_materia=%s AND ativo=TRUE',(id_materia,))
-        if not cur.fetchone(): return jsonify({'erro':'Matéria não encontrada.'}),404
+
+        cur.execute(
+            'SELECT id_materia FROM Materia WHERE id_materia IN (%s) AND ativo = TRUE'
+            % ','.join(['%s'] * len(ids_materias)),
+            tuple(ids_materias)
+        )
+        encontradas = {r[0] for r in cur.fetchall()}
+        faltando = [i for i in ids_materias if i not in encontradas]
+        if faltando: return jsonify({'erro': 'Uma ou mais matérias selecionadas não foram encontradas.'}), 404
+
+        # Matérias que o professor tinha antes e que foram removidas nesta edição
+        # precisam liberar as aulas vinculadas a ele (senão ficaria uma aula
+        # de Física, por exemplo, presa a um professor que não dá mais Física).
+        cur.execute('SELECT id_materia FROM Professor_Materia WHERE matricula_professor=%s', (matricula,))
+        materias_antigas = {r[0] for r in cur.fetchall()}
+        materias_removidas = materias_antigas - set(ids_materias)
+        if materias_removidas:
+            marcadores = ','.join(['%s'] * len(materias_removidas))
+            cur.execute(
+                f'UPDATE Horario SET matricula_professor=NULL WHERE matricula_professor=%s AND id_materia IN ({marcadores})',
+                (matricula, *materias_removidas)
+            )
+
         cur.execute('UPDATE Professor SET nome=%s WHERE matricula=%s',(nome,matricula))
         cur.execute('UPDATE Usuario SET email=%s, telefone=%s WHERE id_usuario=%s',(email_normalizado,telefone,id_usuario))
-        cur.execute('UPDATE Horario SET matricula_professor=NULL WHERE matricula_professor=%s AND id_materia<>%s',(matricula,id_materia))
         cur.execute('DELETE FROM Professor_Materia WHERE matricula_professor=%s',(matricula,))
-        cur.execute('INSERT INTO Professor_Materia (matricula_professor,id_materia) VALUES (%s,%s)',(matricula,id_materia))
-        cur.execute('SELECT COUNT(*) FROM Professor_Materia WHERE id_materia=%s',(id_materia,)); total=cur.fetchone()[0]
-        if total == 1:
-            cur.execute('UPDATE Horario SET matricula_professor=%s WHERE id_materia=%s AND matricula_professor IS NULL',(matricula,id_materia))
+        for id_materia in ids_materias:
+            cur.execute('INSERT INTO Professor_Materia (matricula_professor,id_materia) VALUES (%s,%s)',(matricula,id_materia))
+            cur.execute('SELECT COUNT(*) FROM Professor_Materia WHERE id_materia=%s',(id_materia,)); total=cur.fetchone()[0]
+            if total == 1:
+                cur.execute('UPDATE Horario SET matricula_professor=%s WHERE id_materia=%s AND matricula_professor IS NULL',(matricula,id_materia))
         conn.commit(); return jsonify({'mensagem':'Professor atualizado com sucesso.'})
     except IntegrityError as exc:
         conn.rollback(); return jsonify({'erro':erro_integridade(exc)}),409

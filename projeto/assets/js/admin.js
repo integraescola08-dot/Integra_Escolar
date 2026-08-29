@@ -19,7 +19,13 @@ async function chamarApi(caminho, opcoes = {}) {
 }
 
 function dadosDoFormulario(form) {
-  return Object.fromEntries(new FormData(form).entries());
+  const dados = Object.fromEntries(new FormData(form).entries());
+  // FormData só traz o último valor de campos repetidos (ex: <select multiple>).
+  // Para esses, reconstruímos a lista completa de opções marcadas.
+  form.querySelectorAll('select[multiple]').forEach(select => {
+    dados[select.name] = Array.from(select.selectedOptions).map(opcao => opcao.value);
+  });
+  return dados;
 }
 
 function escaparHtml(valor) {
@@ -255,9 +261,8 @@ async function carregar() {
   selectTurma.innerHTML = '<option value="">Selecione a turma</option>' +
     turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
 
-  const selectMateria = document.querySelector('#form-professor select[name="id_materia"]');
-  selectMateria.innerHTML = '<option value="">Selecione a matéria</option>' +
-    materias.map(m => `<option value="${m.id_materia}">${escaparHtml(m.nome)}</option>`).join('');
+  const selectMateria = document.querySelector('#form-professor select[name="id_materias"]');
+  selectMateria.innerHTML = materias.map(m => `<option value="${m.id_materia}">${escaparHtml(m.nome)}</option>`).join('');
 }
 
 $$('.tabs button').forEach(botao => {
@@ -378,11 +383,15 @@ function abrirEdicao(tipo, id) {
   if (tipo === 'alunos') {
     $('#titulo-edicao').textContent = 'Editar aluno';
     const opcoesTurma = cacheAdmin.turmas.map(t => `<option value="${escaparHtml(t.codigo)}" ${t.codigo === item.turma ? 'selected' : ''}>${escaparHtml(t.codigo)}</option>`).join('');
-    campos = `${inputEdicao('matricula', item.matricula, 'text', 'inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}"')}${inputEdicao('nome', item.nome)}<select name="turma" required>${opcoesTurma}</select>`;
+    const responsaveisAtivos = (cacheAdmin.responsaveis || []).filter(r => r.ativo);
+    const opcoesResponsavel = '<option value="">Nenhum (desvincular)</option>' +
+      responsaveisAtivos.map(r => `<option value="${r.id_responsavel}" ${String(r.id_responsavel) === String(item.id_responsavel) ? 'selected' : ''}>${escaparHtml(r.nome)} — ${escaparHtml(r.cpf || '')}</option>`).join('');
+    campos = `${inputEdicao('matricula', item.matricula, 'text', 'inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}"')}${inputEdicao('nome', item.nome)}<select name="turma" required>${opcoesTurma}</select><label class="campo-largo">Responsável<select name="id_responsavel">${opcoesResponsavel}</select></label><p class="ajuda-form campo-largo">Use isto para corrigir um vínculo feito errado pelo responsável no cadastro.</p>`;
   } else if (tipo === 'professores') {
     $('#titulo-edicao').textContent = 'Editar professor';
-    const opcoesMateria = cacheAdmin.materias.map(m => `<option value="${m.id_materia}" ${String(m.id_materia) === String(item.id_materia) ? 'selected' : ''}>${escaparHtml(m.nome)}</option>`).join('');
-    campos = `${inputEdicao('nome', item.nome)}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}<select name="id_materia" required>${opcoesMateria}</select>`;
+    const materiasAtuais = idsMateriasProfessor(item);
+    const opcoesMateria = cacheAdmin.materias.map(m => `<option value="${m.id_materia}" ${materiasAtuais.includes(String(m.id_materia)) ? 'selected' : ''}>${escaparHtml(m.nome)}</option>`).join('');
+    campos = `${inputEdicao('nome', item.nome)}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}<label class="campo-largo">Matérias<select name="id_materias" multiple size="5" required>${opcoesMateria}</select></label><p class="ajuda-form campo-largo">Segure Ctrl (ou Cmd no Mac) para selecionar mais de uma matéria.</p>`;
   } else {
     $('#titulo-edicao').textContent = tipo === 'coordenadores' ? 'Editar coordenador(a)' : 'Editar porteiro(a)';
     campos = `${inputEdicao('nome', item.nome)}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}`;

@@ -86,9 +86,8 @@
       <input name="nome" placeholder="Nome completo" required>
       <input name="email" type="email" placeholder="Email" required>
       <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
-      <select name="id_materia" required>
-        <option value="">Selecione a matéria</option>
-      </select>
+      <select name="id_materias" id="select-materias-professor" class="campo-largo" multiple size="5" required></select>
+      <p class="ajuda-form campo-largo">Segure Ctrl (ou Cmd no Mac) para selecionar mais de uma matéria.</p>
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
       <button>Cadastrar</button>
     </form>
