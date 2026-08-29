@@ -30,6 +30,7 @@
               <span id="header-role-label">Responsável</span>
             </div>
           </div>
+          <button class="btn-edit-profile" onclick="goTo('screen-perfil')">Editar</button>
         </div>
       </div>
 
@@ -95,7 +96,7 @@
           <p class="avatar-hint">Clique no ícone da câmera para alterar a foto</p>
           <button class="btn-remove-photo" id="btn-remove-photo" style="display:none" onclick="removeAvatar()">Remover foto</button>
         </div>
-        <div class="field"><label>Nome completo</label><input type="text" id="input-nome" placeholder="Seu nome completo" oninput="syncHeader()" /></div>
+        <div class="field"><label>Nome completo</label><input type="text" id="input-nome" placeholder="Seu nome completo" maxlength="150" oninput="syncHeader()" /></div>
         <div class="field"><label>E-mail</label><input type="email" id="input-email" placeholder="seu.email@exemplo.com" oninput="syncHeader()" /></div>
         <div class="field"><label>Telefone</label><input type="tel" id="input-tel" placeholder="(00) 00000-0000" /></div>
         <button class="btn-save" onclick="savePerfil()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Salvar alterações</button>
