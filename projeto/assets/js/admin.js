@@ -167,6 +167,30 @@ async function excluirDefinitivamente(botao) {
   }
 }
 
+async function resetarSenhaResponsavel(botao) {
+  const id = botao.dataset.resetarSenha;
+  const nome = botao.dataset.nome;
+  const senhaNova = (prompt(`Nova senha para ${nome} (mínimo 6 caracteres):\nCombine com o responsável antes de informar.`) || '').trim();
+  if (!senhaNova) return;
+  if (senhaNova.length < 6) { msg('A nova senha deve possuir pelo menos 6 caracteres.', true); return; }
+  if (!confirm(`Confirma a redefinição da senha de ${nome}? A senha atual dele(a) deixará de funcionar imediatamente.`)) return;
+
+  botao.disabled = true;
+  const textoOriginal = botao.textContent;
+  botao.textContent = 'Redefinindo...';
+  try {
+    const resultado = await chamarApi(`/admin/responsaveis/${encodeURIComponent(id)}/senha`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha_nova: senhaNova })
+    });
+    msg(resultado.mensagem);
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
 document.addEventListener('click', e => {
   const editarTurma = e.target.closest('[data-editar-turma]');
   if (editarTurma) return abrirEdicaoTurma(editarTurma.dataset.editarTurma);
@@ -189,6 +213,8 @@ document.addEventListener('click', e => {
 
   const excluir = e.target.closest('[data-excluir-definitivo]');
   if (excluir) return excluirDefinitivamente(excluir);
+  const resetarSenha = e.target.closest('[data-resetar-senha]');
+  if (resetarSenha) return resetarSenhaResponsavel(resetarSenha);
   const decisaoAdmin = e.target.closest('[data-decisao-admin]');
   if (decisaoAdmin) return decidirOcorrenciaAdmin(decisaoAdmin.dataset.idOcorrencia, decisaoAdmin.dataset.decisaoAdmin);
   const anexoAdmin = e.target.closest('[data-anexo-admin]');
@@ -253,7 +279,7 @@ async function carregar() {
     { recurso: 'porteiros', chave: 'id', temStatus: true }
   );
   $('#lista-responsaveis').innerHTML = responsaveis.length ? responsaveis.map(r => `
-    <div class="linha ${ativoComoBooleano(r.ativo) ? '' : 'linha-inativa'}"><span><strong>${escaparHtml(r.nome)}</strong></span><span>${escaparHtml(r.email)}</span><span>CPF: ${escaparHtml(r.cpf)}</span><span>Aluno(s): ${escaparHtml(r.alunos || 'Nenhum vínculo')}</span><span class="status-registro ${ativoComoBooleano(r.ativo) ? 'status-ativo' : 'status-inativo'}">${ativoComoBooleano(r.ativo) ? 'Ativo' : 'Inativo'}</span></div>`).join('') : '<p class="vazio">Nenhum responsável cadastrado.</p>';
+    <div class="linha ${ativoComoBooleano(r.ativo) ? '' : 'linha-inativa'}"><span><strong>${escaparHtml(r.nome)}</strong></span><span>${escaparHtml(r.email)}</span><span>CPF: ${escaparHtml(r.cpf)}</span><span>Aluno(s): ${escaparHtml(r.alunos || 'Nenhum vínculo')}</span><span class="status-registro ${ativoComoBooleano(r.ativo) ? 'status-ativo' : 'status-inativo'}">${ativoComoBooleano(r.ativo) ? 'Ativo' : 'Inativo'}</span><div class="acoes-registro">${ativoComoBooleano(r.ativo) ? `<button type="button" class="btn-resetar-senha" data-resetar-senha="${r.id_responsavel}" data-nome="${escaparHtml(r.nome)}">Resetar senha</button>` : ''}</div></div>`).join('') : '<p class="vazio">Nenhum responsável cadastrado.</p>';
 
   await carregarControleAdmin();
 

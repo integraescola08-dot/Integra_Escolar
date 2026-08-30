@@ -961,6 +961,31 @@ def criar_responsavel_admin():
         cur.close(); conn.close()
 
 
+@admin_bp.route('/responsaveis/<int:id_responsavel>/senha', methods=['PUT'])
+@papel_obrigatorio('administrador')
+def resetar_senha_responsavel(id_responsavel):
+    """Permite ao administrador definir uma nova senha para um responsável
+    que tenha esquecido a sua e pedido ajuda (ver tela 'Esqueci minha senha')."""
+    dados = request.get_json() or {}
+    senha_nova = str(dados.get('senha_nova') or '')
+    if len(senha_nova) < 6:
+        return jsonify({'erro': 'A nova senha deve possuir pelo menos 6 caracteres.'}), 400
+
+    conn = get_connection(); cur = conn.cursor()
+    try:
+        cur.execute('SELECT id_usuario, nome FROM Responsavel WHERE id_responsavel = %s', (id_responsavel,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'erro': 'Responsável não encontrado.'}), 404
+        id_usuario, nome = row
+        cur.execute('UPDATE Usuario SET senha = %s WHERE id_usuario = %s',
+                    (generate_password_hash(senha_nova), id_usuario))
+        conn.commit()
+        return jsonify({'mensagem': f'Senha de {nome} redefinida com sucesso.'})
+    finally:
+        cur.close(); conn.close()
+
+
 @admin_bp.route('/ocorrencias', methods=['GET'])
 @papel_obrigatorio('administrador')
 def historico_ocorrencias_admin():

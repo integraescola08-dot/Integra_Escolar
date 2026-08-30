@@ -322,6 +322,9 @@ form button:disabled {
 }
 
 .btn-editar { background: var(--azul-claro); color: var(--azul-escuro); border: 1px solid var(--azul-principal); border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-resetar-senha { background: var(--ambar-claro); color: var(--ambar); border: 1px solid var(--ambar); border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.btn-resetar-senha:hover { filter: brightness(.96); }
+.btn-resetar-senha:disabled { opacity: .55; cursor: wait; }
 .modal-edicao[hidden] { display: none; }
 .modal-edicao { position: fixed; inset: 0; z-index: 1000; background: rgba(10,25,45,.45); display: grid; place-items: center; padding: 20px; }
 .modal-conteudo { width: min(620px, 100%); background: var(--branco); border-radius: 16px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.22); }
