@@ -179,6 +179,49 @@ form button:hover { filter: brightness(1.06); }
   padding: 8px;
 }
 
+/* Formulário de cadastro de turma: campos preenchíveis em cima,
+   ações (baixar modelo / cadastrar) separadas embaixo por uma
+   linha divisória, para não competirem em destaque visual. */
+#form-turma.form-turma {
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+.campo-turma {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--texto-secundario);
+  font-size: 13px;
+}
+.form-turma-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borda);
+}
+.link-modelo-grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--azul-principal);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.link-modelo-grade:hover { text-decoration: underline; }
+.form-turma-rodape button {
+  min-width: 260px;
+}
+@media (max-width: 650px) {
+  #form-turma.form-turma { grid-template-columns: 1fr; }
+  .form-turma-rodape { flex-direction: column; align-items: stretch; }
+  .link-modelo-grade { justify-content: center; }
+  .form-turma-rodape button { min-width: 0; }
+}
+
 /* Ajustes de usabilidade do painel administrativo */
 .cards article {
   box-shadow: 0 4px 12px rgba(0,0,0,.06);

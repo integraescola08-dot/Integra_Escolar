@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="../assets/img/Logo casinha- endereço.png">
   <link rel="stylesheet" href="../../assets/css/paleta.css">
   <link rel="stylesheet" href="../../assets/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
 <body>
 
@@ -45,17 +46,19 @@
   <section id="turmas" class="painel">
     <h2>Cadastrar turma</h2>
     <p class="ajuda-form">Cadastre o código da turma e importe a grade no modelo .xlsx. As matérias serão identificadas automaticamente; intervalos, almoço e saída não viram aulas.</p>
-    <form id="form-turma" enctype="multipart/form-data">
-      <input name="codigo" placeholder="Código: 2MKA" maxlength="10" required>
-      <label class="arquivo-grade">
+    <form id="form-turma" class="form-turma" enctype="multipart/form-data">
+      <label class="campo-turma">
+        <span>Código da turma</span>
+        <input name="codigo" placeholder="Ex: 2MKA" maxlength="10" required>
+      </label>
+      <label class="campo-turma">
         <span>Planilha de horários (.xlsx)</span>
         <input name="planilha" type="file" accept=".xlsx" required>
       </label>
-      <div class="modelo-grade">
-        <a href="/modelos/modelo_grade_horarios.xlsx" class="btn-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
-        <small>Use este modelo para evitar erros na importação da grade.</small>
+      <div class="form-turma-rodape campo-largo">
+        <a href="/modelos/modelo_grade_horarios.xlsx" class="link-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+        <button>Cadastrar turma e importar grade</button>
       </div>
-      <button>Cadastrar turma e importar grade</button>
     </form>
     <div id="lista-turmas" class="lista"></div>
   </section>
