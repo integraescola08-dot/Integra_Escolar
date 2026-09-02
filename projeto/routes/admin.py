@@ -196,6 +196,7 @@ def resumo():
         ''')['total'],
         'alunos': fetch_one('SELECT COUNT(*) total FROM Aluno WHERE ativo = TRUE')['total'],
         'turmas': fetch_one('SELECT COUNT(*) total FROM Turma')['total'],
+        'materias': fetch_one('SELECT COUNT(*) total FROM Materia WHERE ativo = TRUE')['total'],
     })
 
 
@@ -1045,6 +1046,26 @@ def grade_turma(codigo):
           FIELD(h.dia_da_semana,'Segunda','Terca','Quarta','Quinta','Sexta','Sabado','Domingo'),
           h.hr_inicio
     ''', (codigo,)))
+
+
+@admin_bp.route('/grade-geral', methods=['GET'])
+@papel_obrigatorio('administrador')
+def grade_geral():
+    """Visão consolidada: a grade vigente HOJE de todas as turmas, numa
+    tabela só. Não traz histórico nem vigências futuras — só o que está
+    valendo agora, que é o que a gestão quer enxergar de uma vez."""
+    return jsonify(fetch_all('''
+        SELECT h.id_horario, h.turma, h.dia_da_semana, h.hr_inicio, h.hr_final,
+               m.nome AS materia, h.matricula_professor, p.nome AS professor
+        FROM Horario h
+        JOIN Materia m ON m.id_materia = h.id_materia
+        LEFT JOIN Professor p ON p.matricula = h.matricula_professor
+        WHERE h.data_inicio_vigencia <= CURDATE()
+          AND (h.data_fim_vigencia IS NULL OR h.data_fim_vigencia >= CURDATE())
+        ORDER BY h.turma,
+          FIELD(h.dia_da_semana,'Segunda','Terca','Quarta','Quinta','Sexta','Sabado','Domingo'),
+          h.hr_inicio
+    '''))
 
 
 @admin_bp.route('/horarios/<int:id_horario>/professor', methods=['PUT'])

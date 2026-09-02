@@ -70,6 +70,36 @@ function renderizarAlunos() {
 $('#busca-alunos').addEventListener('input', renderizarAlunos);
 $('#filtro-turma-alunos').addEventListener('change', renderizarAlunos);
 
+function renderizarMaterias() {
+  const termo = normalizarTexto($('#busca-materias').value.trim());
+  const lista = (cacheAdmin.materias || []).filter(m => !termo || normalizarTexto(m.nome).includes(termo));
+  $('#lista-materias').innerHTML = renderizarLinhas(lista, ['nome']);
+}
+$('#busca-materias').addEventListener('input', renderizarMaterias);
+
+const DIAS_ABREVIADOS = { Segunda: 'Seg', Terca: 'Ter', Quarta: 'Qua', Quinta: 'Qui', Sexta: 'Sex', Sabado: 'Sáb', Domingo: 'Dom' };
+
+function renderizarGradeGeral() {
+  const turma = $('#filtro-turma-grade-geral').value;
+  const dia = $('#filtro-dia-grade-geral').value;
+  const lista = (cacheAdmin.gradeGeral || []).filter(a =>
+    (!turma || a.turma === turma) && (!dia || a.dia_da_semana === dia)
+  );
+
+  $('#corpo-grade-geral').innerHTML = lista.length
+    ? lista.map(a => `<tr>
+        <td>${escaparHtml(a.turma)}</td>
+        <td>${escaparHtml(DIAS_ABREVIADOS[a.dia_da_semana] || a.dia_da_semana)}</td>
+        <td>${escaparHtml(String(a.hr_inicio).slice(0, 5))}–${escaparHtml(String(a.hr_final).slice(0, 5))}</td>
+        <td>${escaparHtml(a.materia)}</td>
+        <td>${a.professor ? escaparHtml(a.professor) : '<span class="aviso-sem-professor">Sem professor</span>'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="vazio">Nenhuma aula encontrada para este filtro.</td></tr>';
+}
+
+$('#filtro-turma-grade-geral').addEventListener('change', renderizarGradeGeral);
+$('#filtro-dia-grade-geral').addEventListener('change', renderizarGradeGeral);
+
 function renderizarLinhas(lista, campos, opcoes = {}) {
   if (!lista.length) return '<p class="vazio">Nenhum registro cadastrado.</p>';
 
@@ -230,11 +260,11 @@ async function carregar() {
   $('#saudacao').textContent = `Bem-vindo, ${(usuario.pessoa && usuario.pessoa.nome) || 'Administrador'}`;
 
   const resumo = await chamarApi('/admin/resumo');
-  ['alunos', 'professores', 'coordenadores', 'porteiros', 'turmas'].forEach(chave => {
+  ['alunos', 'professores', 'coordenadores', 'porteiros', 'turmas', 'materias'].forEach(chave => {
     $(`#n-${chave}`).textContent = resumo[chave];
   });
 
-  const [turmas, alunos, professores, coordenadores, porteiros, materias, responsaveis] = await Promise.all([
+  const [turmas, alunos, professores, coordenadores, porteiros, materias, responsaveis, gradeGeral] = await Promise.all([
     chamarApi('/admin/turmas'),
     chamarApi('/admin/alunos?incluir_inativos=1'),
     chamarApi('/admin/professores?incluir_inativos=1'),
@@ -242,9 +272,10 @@ async function carregar() {
     chamarApi('/admin/porteiros?incluir_inativos=1'),
     chamarApi('/admin/materias'),
     chamarApi('/admin/responsaveis?incluir_inativos=1'),
+    chamarApi('/admin/grade-geral'),
   ]);
 
-  cacheAdmin = { turmas, alunos, professores, coordenadores, porteiros, responsaveis, materias };
+  cacheAdmin = { turmas, alunos, professores, coordenadores, porteiros, responsaveis, materias, gradeGeral };
 
   $('#lista-turmas').innerHTML = turmas.length ? turmas.map(t => `
     <div class="linha linha-turma">
@@ -261,6 +292,15 @@ async function carregar() {
   selectFiltroTurma.innerHTML = '<option value="">Todas as turmas</option>' +
     turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
   selectFiltroTurma.value = turmaSelecionada;
+
+  const selectFiltroTurmaGrade = $('#filtro-turma-grade-geral');
+  const turmaGradeSelecionada = selectFiltroTurmaGrade.value;
+  selectFiltroTurmaGrade.innerHTML = '<option value="">Todas as turmas</option>' +
+    turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
+  selectFiltroTurmaGrade.value = turmaGradeSelecionada;
+  renderizarGradeGeral();
+
+  renderizarMaterias();
 
   renderizarAlunos();
   $('#lista-professores').innerHTML = renderizarLinhas(

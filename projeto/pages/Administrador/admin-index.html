@@ -26,6 +26,7 @@
   </section>
 
   <section class="cards">
+    <article><b id="n-materias">0</b><span>Disciplinas</span></article>
     <article><b id="n-alunos">0</b><span>Alunos</span></article>
     <article><b id="n-professores">0</b><span>Professores</span></article>
     <article><b id="n-coordenadores">0</b><span>Coordenadores</span></article>
@@ -34,14 +35,25 @@
   </section>
 
   <nav class="tabs">
-    <button data-tab="professores" class="ativo">Professores</button>
+    <button data-tab="disciplinas" class="ativo">Disciplinas</button>
+    <button data-tab="professores">Professores</button>
     <button data-tab="turmas">Turmas</button>
     <button data-tab="alunos">Alunos</button>
+    <button data-tab="grade-geral">Grade geral</button>
     <button data-tab="coordenadores">Coordenadores</button>
     <button data-tab="porteiros">Porteiros</button>
     <button data-tab="responsaveis">Responsáveis</button>
     <button data-tab="controle">Atestados e liberações</button>
   </nav>
+
+  <section id="disciplinas" class="painel ativo">
+    <h2>Disciplinas</h2>
+    <p class="ajuda-form">As disciplinas são identificadas automaticamente ao importar a grade de horários de uma turma — não é preciso cadastrá-las manualmente aqui. Esta aba é só para consulta.</p>
+    <div class="filtros-lista">
+      <input type="search" id="busca-materias" placeholder="Buscar disciplina...">
+    </div>
+    <div id="lista-materias" class="lista"></div>
+  </section>
 
   <section id="turmas" class="painel">
     <h2>Cadastrar turma</h2>
@@ -61,6 +73,32 @@
       </div>
     </form>
     <div id="lista-turmas" class="lista"></div>
+  </section>
+
+  <section id="grade-geral" class="painel">
+    <h2>Grade geral da escola</h2>
+    <p class="ajuda-form">Todas as turmas, horários, matérias e professores vigentes hoje, numa tabela só. Grades históricas ou ainda não iniciadas não aparecem aqui — use "Visualizar grade" dentro de Turmas para ver o histórico de uma turma específica.</p>
+    <div class="filtros-lista">
+      <select id="filtro-turma-grade-geral">
+        <option value="">Todas as turmas</option>
+      </select>
+      <select id="filtro-dia-grade-geral">
+        <option value="">Todos os dias</option>
+        <option value="Segunda">Segunda</option>
+        <option value="Terca">Terça</option>
+        <option value="Quarta">Quarta</option>
+        <option value="Quinta">Quinta</option>
+        <option value="Sexta">Sexta</option>
+        <option value="Sabado">Sábado</option>
+        <option value="Domingo">Domingo</option>
+      </select>
+    </div>
+    <div class="tabela-grade-wrap">
+      <table class="tabela-grade">
+        <thead><tr><th>Turma</th><th>Dia</th><th>Horário</th><th>Matéria</th><th>Professor</th></tr></thead>
+        <tbody id="corpo-grade-geral"></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="alunos" class="painel">
