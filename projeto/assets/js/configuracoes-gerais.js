@@ -1,7 +1,5 @@
 const state = {
   role: 'responsavel',
-  avatarUrl: null,
-  avatarDirty: false,
   notif: {
     email_ativo: true,
     push_ativo: true,
@@ -70,13 +68,16 @@ async function preencherComUsuarioReal(usuario) {
 function preencherCamposBasicos(usuario) {
   const nome = (usuario.pessoa && usuario.pessoa.nome) || 'Usuário';
   const email = usuario.email || '';
-  const telefone = usuario.telefone || '';
 
   document.getElementById('input-nome').value = nome;
   document.getElementById('input-email').value = email;
-  document.getElementById('input-tel').value = formatarTelefone(telefone);
+  // O telefone só vem completo em /auth/perfil (carregarPerfilReal); os dados
+  // iniciais vindos do login não trazem esse campo, então não sobrescrevemos
+  // o que já estiver no input com um valor vazio.
+  if (usuario.telefone !== undefined) {
+    document.getElementById('input-tel').value = formatarTelefone(usuario.telefone);
+  }
   document.getElementById('header-role-label').textContent = ROLE_LABELS[state.role] || 'Usuário';
-  aplicarAvatar(usuario.foto_perfil || null);
   syncHeader();
 }
 
@@ -87,7 +88,6 @@ async function carregarPerfilReal() {
     if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível carregar o perfil.');
     if (dados.usuario) {
       preencherCamposBasicos(dados.usuario);
-      state.avatarDirty = false;
     }
   } catch (erro) {
     console.warn('Não foi possível carregar o perfil do servidor:', erro);
@@ -110,62 +110,9 @@ function syncHeader() {
   const email = document.getElementById('input-email').value || '';
   document.getElementById('header-name').textContent = nome;
   document.getElementById('header-email').textContent = email;
-  if (!state.avatarUrl) document.getElementById('header-avatar').textContent = getInitials(nome);
-}
-
-function aplicarAvatar(dataUrl) {
-  state.avatarUrl = dataUrl || null;
-  const initials = document.getElementById('perfil-avatar-initials');
-  const img = document.getElementById('perfil-avatar-img');
-  const remove = document.getElementById('btn-remove-photo');
-
-  if (state.avatarUrl) {
-    initials.style.display = 'none';
-    img.src = state.avatarUrl;
-    img.style.display = 'block';
-    remove.style.display = 'inline';
-    document.getElementById('header-avatar').innerHTML = `<img src="${state.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  } else {
-    initials.style.display = '';
-    img.src = '';
-    img.style.display = 'none';
-    remove.style.display = 'none';
-  }
-}
-
-function handleAvatarChange(e) {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  if (!file.type.startsWith('image/')) {
-    showToast('Escolha uma imagem válida.', 'error');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 256;
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(img.width * scale));
-      canvas.height = Math.max(1, Math.round(img.height * scale));
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      state.avatarUrl = canvas.toDataURL('image/jpeg', 0.82);
-      state.avatarDirty = true;
-      aplicarAvatar(state.avatarUrl);
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeAvatar() {
-  state.avatarUrl = null;
-  state.avatarDirty = true;
-  aplicarAvatar(null);
-  syncHeader();
+  document.getElementById('header-avatar').textContent = getInitials(nome);
+  const iniciais = document.getElementById('perfil-avatar-initials');
+  if (iniciais) iniciais.textContent = getInitials(nome);
 }
 
 async function savePerfil() {
@@ -187,7 +134,6 @@ async function savePerfil() {
 
   try {
     const corpo = { nome, email, telefone };
-    if (state.avatarDirty) corpo.foto_perfil = state.avatarUrl;
 
     const resposta = await apiFetch(`${API_URL}/auth/perfil`, {
       method: 'PUT',
@@ -197,7 +143,6 @@ async function savePerfil() {
     const dados = await resposta.json();
     if (!resposta.ok) throw new Error(dados.erro || 'Não foi possível salvar o perfil.');
 
-    state.avatarDirty = false;
     if (dados.usuario) {
       preencherCamposBasicos(dados.usuario);
       atualizarUsuarioPai(dados.usuario, dados.token);

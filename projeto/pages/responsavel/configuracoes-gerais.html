@@ -40,7 +40,7 @@
           <div class="menu-list">
             <button class="menu-item" onclick="goTo('screen-perfil')">
               <span class="menu-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-              <span class="menu-item-text"><span class="menu-item-label">  Informações do Perfil</span><span class="menu-item-desc">                                          Nome, e-mail, telefone e foto</span></span>
+              <span class="menu-item-text"><span class="menu-item-label">  Informações do Perfil</span><span class="menu-item-desc">                                          Nome, e-mail e telefone</span></span>
               <span class="menu-chevron"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></span>
             </button>
             <button class="menu-item" onclick="goTo('screen-seguranca')">
@@ -86,15 +86,8 @@
           <div class="avatar-lg" id="perfil-avatar-display">
             <div class="avatar-lg-inner">
               <span id="perfil-avatar-initials">···</span>
-              <img id="perfil-avatar-img" src="" alt="" style="display:none" />
             </div>
-            <label class="avatar-camera-btn" title="Alterar foto">
-              <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <input type="file" accept="image/*" id="avatar-input" style="display:none" onchange="handleAvatarChange(event)" />
-            </label>
           </div>
-          <p class="avatar-hint">Clique no ícone da câmera para alterar a foto</p>
-          <button class="btn-remove-photo" id="btn-remove-photo" style="display:none" onclick="removeAvatar()">Remover foto</button>
         </div>
         <div class="field"><label>Nome completo</label><input type="text" id="input-nome" placeholder="Seu nome completo" maxlength="150" oninput="syncHeader()" /></div>
         <div class="field"><label>E-mail</label><input type="email" id="input-email" placeholder="seu.email@exemplo.com" oninput="syncHeader()" /></div>
