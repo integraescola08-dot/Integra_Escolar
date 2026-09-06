@@ -132,6 +132,204 @@ def extrair_grade_planilha(arquivo):
     return aulas
 
 
+CABECALHOS_ALUNOS = {
+    'matricula': 'matricula',
+    'matrícula': 'matricula',
+    'nome': 'nome',
+    'nome completo': 'nome',
+    'turma': 'turma',
+}
+
+
+def extrair_alunos_planilha(arquivo):
+    """Lê uma planilha com várias linhas de alunos para cadastro em lote.
+
+    Linha 1: cabeçalhos (Matrícula, Nome, Turma, em qualquer ordem).
+    Demais linhas: um aluno por linha. Linhas totalmente vazias são ignoradas.
+
+    Retorna uma lista de linhas processadas, cada uma com os dados já
+    normalizados (quando possível) e, se algo estiver errado, o motivo —
+    o cadastro em si decide o que fazer com cada linha.
+    """
+    try:
+        wb = load_workbook(arquivo, data_only=True, read_only=True)
+    except Exception as exc:
+        raise ValueError('Não foi possível ler a planilha. Envie um arquivo .xlsx válido.') from exc
+
+    ws = wb.active
+    # Não usamos ws.max_row/ws.max_column: planilhas resalvas fora do Excel
+    # (Google Sheets, LibreOffice etc.) às vezes não gravam essa informação,
+    # e o openpyxl devolve None nesse caso. Ler linha a linha com iter_rows
+    # funciona independentemente disso.
+    linhas_brutas = list(ws.iter_rows(values_only=True))
+    if not linhas_brutas:
+        raise ValueError('A planilha está vazia.')
+
+    cabecalho = linhas_brutas[0]
+    colunas = {}
+    for indice, valor in enumerate(cabecalho):
+        chave = CABECALHOS_ALUNOS.get(normalizar(valor))
+        if chave and chave not in colunas:
+            colunas[chave] = indice
+
+    faltando = {'matricula', 'nome', 'turma'} - colunas.keys()
+    if faltando:
+        raise ValueError(
+            'A primeira linha da planilha precisa ter as colunas Matrícula, Nome e Turma. '
+            f'Não encontrei: {", ".join(sorted(faltando))}.'
+        )
+
+    def valor_da_coluna(valores, chave):
+        indice = colunas[chave]
+        return valores[indice] if indice < len(valores) else None
+
+    linhas = []
+    for numero_linha, valores in enumerate(linhas_brutas[1:], start=2):
+        matricula_bruta = valor_da_coluna(valores, 'matricula')
+        nome_bruto = valor_da_coluna(valores, 'nome')
+        turma_bruta = valor_da_coluna(valores, 'turma')
+        if matricula_bruta in (None, '') and nome_bruto in (None, '') and turma_bruta in (None, ''):
+            continue  # linha em branco, comum no final de planilhas exportadas
+
+        matricula = digitos(matricula_bruta)
+        nome = texto(nome_bruto)
+        turma = texto(turma_bruta).upper()
+
+        erro = None
+        if not matricula or not nome or not turma:
+            erro = 'Matrícula, nome ou turma em branco.'
+        elif not 6 <= len(matricula) <= 12:
+            erro = 'Matrícula deve ter entre 6 e 12 dígitos.'
+        elif len(turma) > 10:
+            erro = 'Código de turma maior que 10 caracteres.'
+
+        linhas.append({'linha': numero_linha, 'matricula': matricula, 'nome': nome, 'turma': turma, 'erro': erro})
+
+    if not linhas:
+        raise ValueError('Nenhuma linha de aluno foi encontrada na planilha.')
+    return linhas
+
+
+CABECALHOS_IMPORTACAO_COMPLETA = {
+    'turma': 'turma',
+    'matricula': 'matricula_aluno',
+    'matricula aluno': 'matricula_aluno',
+    'matricula do aluno': 'matricula_aluno',
+    'nome aluno': 'nome_aluno',
+    'nome do aluno': 'nome_aluno',
+    'nome responsavel': 'nome_responsavel',
+    'nome do responsavel': 'nome_responsavel',
+    'cpf': 'cpf_responsavel',
+    'cpf responsavel': 'cpf_responsavel',
+    'cpf do responsavel': 'cpf_responsavel',
+    'telefone': 'telefone_responsavel',
+    'telefone responsavel': 'telefone_responsavel',
+    'telefone do responsavel': 'telefone_responsavel',
+    'email': 'email_responsavel',
+    'email responsavel': 'email_responsavel',
+    'email do responsavel': 'email_responsavel',
+    'senha': 'senha_responsavel',
+    'senha responsavel': 'senha_responsavel',
+    'senha do responsavel': 'senha_responsavel',
+}
+
+COLUNAS_OBRIGATORIAS_IMPORTACAO_COMPLETA = {'turma', 'matricula_aluno', 'nome_aluno'}
+COLUNAS_RESPONSAVEL_IMPORTACAO_COMPLETA = (
+    'nome_responsavel', 'cpf_responsavel', 'telefone_responsavel', 'email_responsavel'
+)
+
+
+def extrair_importacao_completa_planilha(arquivo):
+    """Lê a planilha unificada de Turma + Aluno + Responsável.
+
+    Uma linha por aluno. Quando dois alunos são irmãos, o responsável se
+    repete nas duas linhas (mesmo CPF) — quem decide se cria ou só vincula
+    é o próprio endpoint de importação, com base no CPF já visto.
+
+    A coluna de senha é opcional tanto na planilha quanto por linha: quando
+    ausente, o próprio endpoint gera uma senha provisória a partir do CPF.
+    """
+    try:
+        wb = load_workbook(arquivo, data_only=True, read_only=True)
+    except Exception as exc:
+        raise ValueError('Não foi possível ler a planilha. Envie um arquivo .xlsx válido.') from exc
+
+    ws = wb.active
+    linhas_brutas = list(ws.iter_rows(values_only=True))
+    if not linhas_brutas:
+        raise ValueError('A planilha está vazia.')
+
+    cabecalho = linhas_brutas[0]
+    colunas = {}
+    for indice, valor in enumerate(cabecalho):
+        chave = CABECALHOS_IMPORTACAO_COMPLETA.get(normalizar(valor))
+        if chave and chave not in colunas:
+            colunas[chave] = indice
+
+    faltando = COLUNAS_OBRIGATORIAS_IMPORTACAO_COMPLETA - colunas.keys()
+    if faltando:
+        raise ValueError(
+            'A primeira linha da planilha precisa ter as colunas Turma, Matrícula Aluno e Nome Aluno. '
+            f'Não encontrei: {", ".join(sorted(faltando))}.'
+        )
+
+    def valor_da_coluna(valores, chave):
+        if chave not in colunas:
+            return None
+        indice = colunas[chave]
+        return valores[indice] if indice < len(valores) else None
+
+    linhas = []
+    for numero_linha, valores in enumerate(linhas_brutas[1:], start=2):
+        turma = texto(valor_da_coluna(valores, 'turma')).upper()
+        matricula_aluno = digitos(valor_da_coluna(valores, 'matricula_aluno'))
+        nome_aluno = texto(valor_da_coluna(valores, 'nome_aluno'))
+        nome_resp = texto(valor_da_coluna(valores, 'nome_responsavel'))
+        cpf_resp = digitos(valor_da_coluna(valores, 'cpf_responsavel'))
+        telefone_resp = digitos(valor_da_coluna(valores, 'telefone_responsavel'))
+        email_resp = texto(valor_da_coluna(valores, 'email_responsavel')).lower()
+        senha_resp = texto(valor_da_coluna(valores, 'senha_responsavel'))
+
+        if not any((turma, matricula_aluno, nome_aluno, nome_resp, cpf_resp, telefone_resp, email_resp)):
+            continue  # linha em branco
+
+        erro = None
+        if not turma or not matricula_aluno or not nome_aluno:
+            erro = 'Turma, matrícula do aluno e nome do aluno são obrigatórios.'
+        elif not 6 <= len(matricula_aluno) <= 12:
+            erro = 'Matrícula do aluno deve ter entre 6 e 12 dígitos.'
+        elif len(turma) > 10:
+            erro = 'Código de turma maior que 10 caracteres.'
+
+        campos_resp = (nome_resp, cpf_resp, telefone_resp, email_resp)
+        tem_algum_campo_resp = any(campos_resp)
+        tem_responsavel = all(campos_resp)
+        if erro is None and tem_algum_campo_resp and not tem_responsavel:
+            erro = ('Dados do responsável incompletos — preencha nome, CPF, telefone e email do '
+                     'responsável, ou deixe as quatro colunas em branco.')
+        elif erro is None and tem_responsavel:
+            if len(cpf_resp) != 11:
+                erro = 'CPF do responsável deve ter 11 dígitos.'
+            elif len(telefone_resp) not in (10, 11):
+                erro = 'Telefone do responsável deve ter 10 ou 11 dígitos.'
+            elif '@' not in email_resp:
+                erro = 'Email do responsável inválido.'
+            elif senha_resp and len(senha_resp) < 6:
+                erro = 'Senha do responsável deve ter pelo menos 6 caracteres.'
+
+        linhas.append({
+            'linha': numero_linha, 'turma': turma, 'matricula_aluno': matricula_aluno,
+            'nome_aluno': nome_aluno, 'tem_responsavel': tem_responsavel,
+            'nome_responsavel': nome_resp, 'cpf_responsavel': cpf_resp,
+            'telefone_responsavel': telefone_resp, 'email_responsavel': email_resp,
+            'senha_responsavel': senha_resp, 'erro': erro,
+        })
+
+    if not linhas:
+        raise ValueError('Nenhuma linha de aluno foi encontrada na planilha.')
+    return linhas
+
+
 def materia_id_por_nome(cur, nome):
     cur.execute('SELECT id_materia FROM Materia WHERE nome = %s', (nome,))
     row = cur.fetchone()
@@ -324,6 +522,221 @@ def criar_aluno():
     finally:
         cur.close()
         conn.close()
+
+
+@admin_bp.route('/alunos/importar', methods=['POST'])
+@papel_obrigatorio('administrador')
+def importar_alunos():
+    arquivo = request.files.get('planilha')
+    if not arquivo or not arquivo.filename or not arquivo.filename.lower().endswith('.xlsx'):
+        return jsonify({'erro': 'Selecione uma planilha .xlsx válida.'}), 400
+    try:
+        linhas = extrair_alunos_planilha(arquivo.stream)
+    except ValueError as exc:
+        return jsonify({'erro': str(exc)}), 400
+
+    conn = get_connection()
+    cur = conn.cursor(buffered=True)
+    importados = 0
+    duplicados = []
+    turma_invalida = []
+    invalidos = []
+    matriculas_na_planilha = set()
+    try:
+        cur.execute('SELECT codigo FROM Turma')
+        turmas_existentes = {row[0] for row in cur.fetchall()}
+
+        for linha in linhas:
+            if linha['erro']:
+                invalidos.append({'linha': linha['linha'], 'motivo': linha['erro']})
+                continue
+
+            matricula = linha['matricula']
+            if matricula in matriculas_na_planilha:
+                duplicados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} repetida na própria planilha.'})
+                continue
+
+            if linha['turma'] not in turmas_existentes:
+                turma_invalida.append({'linha': linha['linha'], 'motivo': f'Turma "{linha["turma"]}" não está cadastrada.'})
+                continue
+
+            cur.execute('SELECT ativo FROM Aluno WHERE matricula = %s', (matricula,))
+            existente = cur.fetchone()
+            if existente:
+                situacao = 'ativo' if existente[0] else 'desativado (use Reativar)'
+                duplicados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} já cadastrada ({situacao}).'})
+                continue
+
+            cur.execute(
+                'INSERT INTO Aluno (matricula, nome, turma) VALUES (%s, %s, %s)',
+                (matricula, linha['nome'], linha['turma'])
+            )
+            matriculas_na_planilha.add(matricula)
+            importados += 1
+
+        conn.commit()
+    except IntegrityError as exc:
+        conn.rollback()
+        return jsonify({'erro': erro_integridade(exc)}), 409
+    except Exception as exc:
+        conn.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'erro': f'Erro ao processar a planilha: {exc}'}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+    ignorados = invalidos + duplicados + turma_invalida
+    return jsonify({
+        'mensagem': f'Importação concluída: {importados} aluno(s) cadastrado(s).',
+        'importados': importados,
+        'ignorados': len(ignorados),
+        'detalhes_ignorados': ignorados[:50],
+    }), 201
+
+
+@admin_bp.route('/importar-completo', methods=['POST'])
+@papel_obrigatorio('administrador')
+def importar_completo():
+    """Importação unificada: cria turma (se faltar), aluno e responsável a
+    partir de uma única planilha, uma linha por aluno.
+
+    Irmãos (mesmo CPF de responsável) são detectados e vinculados ao mesmo
+    responsável, sem duplicar o cadastro. Quando a senha do responsável não
+    é informada, usamos os 6 primeiros dígitos do CPF como senha provisória.
+    """
+    arquivo = request.files.get('planilha')
+    if not arquivo or not arquivo.filename or not arquivo.filename.lower().endswith('.xlsx'):
+        return jsonify({'erro': 'Selecione uma planilha .xlsx válida.'}), 400
+    try:
+        linhas = extrair_importacao_completa_planilha(arquivo.stream)
+    except ValueError as exc:
+        return jsonify({'erro': str(exc)}), 400
+
+    conn = get_connection()
+    cur = conn.cursor(buffered=True)
+    importados_alunos = 0
+    importados_responsaveis = 0
+    vinculados_a_responsavel_existente = 0
+    turmas_criadas = set()
+    ignorados = []
+    credenciais_criadas = []
+    responsaveis_cache = {}  # cpf -> id_responsavel, resolvido nesta importação
+    matriculas_na_planilha = set()
+    try:
+        cur.execute('SELECT codigo FROM Turma')
+        turmas_existentes = {row[0] for row in cur.fetchall()}
+
+        for linha in linhas:
+            if linha['erro']:
+                ignorados.append({'linha': linha['linha'], 'motivo': linha['erro']})
+                continue
+
+            matricula = linha['matricula_aluno']
+            turma = linha['turma']
+
+            if matricula in matriculas_na_planilha:
+                ignorados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} repetida na própria planilha.'})
+                continue
+
+            if turma not in turmas_existentes:
+                cur.execute('INSERT INTO Turma (codigo) VALUES (%s)', (turma,))
+                turmas_existentes.add(turma)
+                turmas_criadas.add(turma)
+
+            id_responsavel = None
+            if linha['tem_responsavel']:
+                cpf = linha['cpf_responsavel']
+                if cpf in responsaveis_cache:
+                    id_responsavel = responsaveis_cache[cpf]
+                else:
+                    cur.execute('SELECT id_responsavel FROM Responsavel WHERE cpf = %s', (cpf,))
+                    existente_resp = cur.fetchone()
+                    if existente_resp:
+                        id_responsavel = existente_resp[0]
+                        responsaveis_cache[cpf] = id_responsavel
+                        vinculados_a_responsavel_existente += 1
+                    else:
+                        email_resp = linha['email_responsavel']
+                        cur.execute('SELECT id_usuario FROM Usuario WHERE email = %s', (email_resp,))
+                        if cur.fetchone():
+                            ignorados.append({
+                                'linha': linha['linha'],
+                                'motivo': f'Email {email_resp} já pertence a outro usuário; o aluno foi cadastrado sem responsável vinculado.'
+                            })
+                        else:
+                            senha_resp = linha['senha_responsavel'] or linha['cpf_responsavel'][:6]
+                            senha_hash = generate_password_hash(senha_resp)
+                            cur.execute(
+                                'INSERT INTO Usuario (email, senha, telefone, nivel_acesso) VALUES (%s, %s, %s, 1)',
+                                (email_resp, senha_hash, linha['telefone_responsavel'])
+                            )
+                            id_usuario = cur.lastrowid
+                            cur.execute(
+                                'INSERT INTO Responsavel (id_usuario, cpf, nome, telefone, primeiro_login) '
+                                'VALUES (%s, %s, %s, %s, TRUE)',
+                                (id_usuario, cpf, linha['nome_responsavel'], linha['telefone_responsavel'])
+                            )
+                            id_responsavel = cur.lastrowid
+                            responsaveis_cache[cpf] = id_responsavel
+                            importados_responsaveis += 1
+                            credenciais_criadas.append({
+                                'responsavel': linha['nome_responsavel'],
+                                'email': email_resp,
+                                'senha_provisoria': senha_resp,
+                            })
+
+            cur.execute('SELECT ativo, id_responsavel FROM Aluno WHERE matricula = %s', (matricula,))
+            aluno_existente = cur.fetchone()
+            if aluno_existente:
+                ativo, resp_atual = aluno_existente
+                if not ativo:
+                    ignorados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} pertence a aluno desativado (use Reativar).'})
+                elif resp_atual is not None:
+                    ignorados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} já cadastrada e já vinculada a um responsável.'})
+                else:
+                    if id_responsavel:
+                        cur.execute('UPDATE Aluno SET id_responsavel = %s WHERE matricula = %s', (id_responsavel, matricula))
+                    matriculas_na_planilha.add(matricula)
+            else:
+                cur.execute(
+                    'INSERT INTO Aluno (matricula, nome, turma, id_responsavel) VALUES (%s, %s, %s, %s)',
+                    (matricula, linha['nome_aluno'], turma, id_responsavel)
+                )
+                matriculas_na_planilha.add(matricula)
+                importados_alunos += 1
+
+        conn.commit()
+    except IntegrityError as exc:
+        conn.rollback()
+        return jsonify({'erro': erro_integridade(exc)}), 409
+    except Exception as exc:
+        conn.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'erro': f'Erro ao processar a planilha: {exc}'}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+    return jsonify({
+        'mensagem': (
+            f'Importação concluída: {importados_alunos} aluno(s), {importados_responsaveis} '
+            f'responsável(is) novo(s) e {len(turmas_criadas)} turma(s) criada(s).'
+        ),
+        'importados_alunos': importados_alunos,
+        'importados_responsaveis': importados_responsaveis,
+        'vinculados_a_responsavel_existente': vinculados_a_responsavel_existente,
+        'turmas_criadas': sorted(turmas_criadas),
+        'ignorados': len(ignorados),
+        'detalhes_ignorados': ignorados[:50],
+        'credenciais_criadas': credenciais_criadas[:100],
+        'aviso_senha': (
+            'Quando a coluna Senha vem em branco, a senha provisória do responsável são os 6 '
+            'primeiros dígitos do CPF. Oriente os responsáveis a trocarem a senha no primeiro acesso.'
+        ),
+    }), 201
 
 
 @admin_bp.route('/alunos/<matricula>', methods=['DELETE'])

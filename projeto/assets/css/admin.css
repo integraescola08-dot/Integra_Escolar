@@ -222,6 +222,21 @@ form button:hover { filter: brightness(1.06); }
   .form-turma-rodape button { min-width: 0; }
 }
 
+.aviso-importacao {
+  background: #FFF7E6;
+  border: 1px solid #F0C36D;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 22px;
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+.aviso-importacao p { font-weight: 700; margin-bottom: 6px; color: inherit; }
+.aviso-importacao ul { margin: 0; padding-left: 18px; max-height: 180px; overflow-y: auto; }
+.aviso-importacao li { margin-bottom: 3px; }
+.aviso-importacao.aviso-sucesso { background: #E9F7EF; border-color: #8FD9AE; }
+.aviso-importacao code { background: rgba(0,0,0,.08); padding: 1px 6px; border-radius: 4px; }
+
 /* Ajustes de usabilidade do painel administrativo */
 .cards article {
   box-shadow: 0 4px 12px rgba(0,0,0,.06);

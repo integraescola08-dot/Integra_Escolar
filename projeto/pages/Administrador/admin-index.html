@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Integra Escolar | Administração</title>
-  <link rel="icon" type="image/png" href="../assets/img/Logo casinha- endereço.png">
+  <link rel="icon" type="image/png" href="../../assets/img/Logo casinha- endereço.png">
   <link rel="stylesheet" href="../../assets/css/paleta.css">
   <link rel="stylesheet" href="../../assets/css/admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -39,6 +39,7 @@
     <button data-tab="professores">Professores</button>
     <button data-tab="turmas">Turmas</button>
     <button data-tab="alunos">Alunos</button>
+    <button data-tab="importacao-completa">Importação completa</button>
     <button data-tab="grade-geral">Grade geral</button>
     <button data-tab="coordenadores">Coordenadores</button>
     <button data-tab="porteiros">Porteiros</button>
@@ -112,6 +113,20 @@
       <button>Cadastrar</button>
     </form>
 
+    <h2>Importar vários alunos por planilha</h2>
+    <p class="ajuda-form">Use esta opção para cadastrar uma turma inteira de uma vez. A turma informada em cada linha já precisa estar cadastrada.</p>
+    <form id="form-importar-alunos" class="form-turma" enctype="multipart/form-data">
+      <label class="campo-turma campo-largo">
+        <span>Planilha de alunos (.xlsx)</span>
+        <input name="planilha" type="file" accept=".xlsx" required>
+      </label>
+      <div class="form-turma-rodape campo-largo">
+        <a href="/modelos/modelo_alunos.xlsx" class="link-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+        <button>Importar alunos</button>
+      </div>
+    </form>
+    <div id="resultado-importacao-alunos"></div>
+
     <div class="filtros-lista">
       <input type="search" id="busca-alunos" placeholder="Buscar por nome ou matrícula...">
       <select id="filtro-turma-alunos">
@@ -119,6 +134,29 @@
       </select>
     </div>
     <div id="lista-alunos" class="lista"></div>
+  </section>
+
+  <section id="importacao-completa" class="painel">
+    <h2>Importação completa (Turma + Aluno + Responsável)</h2>
+    <p class="ajuda-form">
+      Use esta opção para cadastrar tudo de uma vez a partir de uma planilha: a turma é criada
+      automaticamente se ainda não existir (só o código — a grade de horários continua sendo
+      importada à parte, na aba Turmas), o aluno é cadastrado e o responsável é criado e vinculado.
+      Se dois alunos forem irmãos, repita os mesmos dados de responsável (mesmo CPF) nas duas
+      linhas — o sistema identifica pelo CPF e não duplica o cadastro. As colunas de responsável
+      podem ficar em branco se o aluno ainda não tiver um cadastrado.
+    </p>
+    <form id="form-importacao-completa" class="form-turma" enctype="multipart/form-data">
+      <label class="campo-turma campo-largo">
+        <span>Planilha de importação completa (.xlsx)</span>
+        <input name="planilha" type="file" accept=".xlsx" required>
+      </label>
+      <div class="form-turma-rodape campo-largo">
+        <a href="/modelos/modelo_importacao_completa.xlsx" class="link-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+        <button>Importar tudo</button>
+      </div>
+    </form>
+    <div id="resultado-importacao-completa"></div>
   </section>
 
   <section id="professores" class="painel ativo">

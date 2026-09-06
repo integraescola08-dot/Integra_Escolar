@@ -63,6 +63,16 @@ def modelo_grade_horarios():
     return send_from_directory(BASE_DIR / 'modelos', 'modelo_grade_horarios.xlsx', as_attachment=True, download_name='modelo_grade_horarios.xlsx')
 
 
+@app.route('/modelos/modelo_alunos.xlsx')
+def modelo_alunos():
+    return send_from_directory(BASE_DIR / 'modelos', 'modelo_alunos.xlsx', as_attachment=True, download_name='modelo_alunos.xlsx')
+
+
+@app.route('/modelos/modelo_importacao_completa.xlsx')
+def modelo_importacao_completa():
+    return send_from_directory(BASE_DIR / 'modelos', 'modelo_importacao_completa.xlsx', as_attachment=True, download_name='modelo_importacao_completa.xlsx')
+
+
 @app.route('/uploads/<path:filename>')
 @login_obrigatorio
 def uploaded_file(filename):

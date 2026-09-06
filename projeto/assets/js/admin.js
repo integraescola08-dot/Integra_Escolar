@@ -419,8 +419,95 @@ async function enviarTurma(form) {
   }
 }
 
+async function enviarImportacaoAlunos(form) {
+  const botao = form.querySelector('button');
+  const textoOriginal = botao.textContent;
+  const areaResultado = $('#resultado-importacao-alunos');
+  areaResultado.innerHTML = '';
+  try {
+    botao.disabled = true;
+    botao.textContent = 'Importando...';
+    const resultado = await chamarApi('/admin/alunos/importar', {
+      method: 'POST',
+      body: new FormData(form)
+    });
+    msg(resultado.mensagem);
+
+    if (resultado.ignorados) {
+      const linhasIgnoradas = (resultado.detalhes_ignorados || [])
+        .map(item => `<li>Linha ${item.linha}: ${escaparHtml(item.motivo)}</li>`).join('');
+      areaResultado.innerHTML = `
+        <div class="aviso-importacao">
+          <p>${resultado.ignorados} linha(s) não foram importadas:</p>
+          <ul>${linhasIgnoradas}</ul>
+        </div>`;
+    }
+
+    form.reset();
+    await carregar();
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+
 $('#form-turma').addEventListener('submit', e => { e.preventDefault(); enviarTurma(e.target); });
 $('#form-aluno').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/alunos'); });
+$('#form-importar-alunos').addEventListener('submit', e => { e.preventDefault(); enviarImportacaoAlunos(e.target); });
+
+async function enviarImportacaoCompleta(form) {
+  const botao = form.querySelector('button');
+  const textoOriginal = botao.textContent;
+  const areaResultado = $('#resultado-importacao-completa');
+  areaResultado.innerHTML = '';
+  try {
+    botao.disabled = true;
+    botao.textContent = 'Importando...';
+    const resultado = await chamarApi('/admin/importar-completo', {
+      method: 'POST',
+      body: new FormData(form)
+    });
+    msg(resultado.mensagem);
+
+    let html = '';
+    if (resultado.turmas_criadas && resultado.turmas_criadas.length) {
+      html += `<div class="aviso-importacao aviso-sucesso">
+        <p>Turma(s) criada(s) automaticamente: ${resultado.turmas_criadas.map(escaparHtml).join(', ')}.</p>
+        <p>Não esqueça de importar a grade de horários delas na aba Turmas.</p>
+      </div>`;
+    }
+    if (resultado.credenciais_criadas && resultado.credenciais_criadas.length) {
+      const linhasCredenciais = resultado.credenciais_criadas
+        .map(c => `<li><b>${escaparHtml(c.responsavel)}</b> — ${escaparHtml(c.email)} — senha provisória: <code>${escaparHtml(c.senha_provisoria)}</code></li>`)
+        .join('');
+      html += `<div class="aviso-importacao aviso-sucesso">
+        <p>${resultado.importados_responsaveis} responsável(is) novo(s). Repasse as credenciais abaixo e oriente a troca de senha no primeiro acesso:</p>
+        <ul>${linhasCredenciais}</ul>
+      </div>`;
+    }
+    if (resultado.ignorados) {
+      const linhasIgnoradas = (resultado.detalhes_ignorados || [])
+        .map(item => `<li>Linha ${item.linha}: ${escaparHtml(item.motivo)}</li>`).join('');
+      html += `<div class="aviso-importacao">
+        <p>${resultado.ignorados} linha(s) não foram importadas:</p>
+        <ul>${linhasIgnoradas}</ul>
+      </div>`;
+    }
+    areaResultado.innerHTML = html;
+
+    form.reset();
+    await carregar();
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = textoOriginal;
+  }
+}
+$('#form-importacao-completa').addEventListener('submit', e => { e.preventDefault(); enviarImportacaoCompleta(e.target); });
+
 $('#form-professor').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/professores'); });
 $('#form-coordenador').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/coordenadores'); });
 $('#form-porteiro').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/porteiros'); });
