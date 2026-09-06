@@ -1,4 +1,6 @@
 from datetime import date, datetime, time, timedelta
+import csv
+import io
 import re
 import unicodedata
 
@@ -9,6 +11,7 @@ from werkzeug.security import generate_password_hash
 
 from db import execute, fetch_all, fetch_one, get_connection
 from auth_utils import papel_obrigatorio
+from validadores import nome_valido, MENSAGEM_NOME_INVALIDO
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -132,204 +135,6 @@ def extrair_grade_planilha(arquivo):
     return aulas
 
 
-CABECALHOS_ALUNOS = {
-    'matricula': 'matricula',
-    'matrícula': 'matricula',
-    'nome': 'nome',
-    'nome completo': 'nome',
-    'turma': 'turma',
-}
-
-
-def extrair_alunos_planilha(arquivo):
-    """Lê uma planilha com várias linhas de alunos para cadastro em lote.
-
-    Linha 1: cabeçalhos (Matrícula, Nome, Turma, em qualquer ordem).
-    Demais linhas: um aluno por linha. Linhas totalmente vazias são ignoradas.
-
-    Retorna uma lista de linhas processadas, cada uma com os dados já
-    normalizados (quando possível) e, se algo estiver errado, o motivo —
-    o cadastro em si decide o que fazer com cada linha.
-    """
-    try:
-        wb = load_workbook(arquivo, data_only=True, read_only=True)
-    except Exception as exc:
-        raise ValueError('Não foi possível ler a planilha. Envie um arquivo .xlsx válido.') from exc
-
-    ws = wb.active
-    # Não usamos ws.max_row/ws.max_column: planilhas resalvas fora do Excel
-    # (Google Sheets, LibreOffice etc.) às vezes não gravam essa informação,
-    # e o openpyxl devolve None nesse caso. Ler linha a linha com iter_rows
-    # funciona independentemente disso.
-    linhas_brutas = list(ws.iter_rows(values_only=True))
-    if not linhas_brutas:
-        raise ValueError('A planilha está vazia.')
-
-    cabecalho = linhas_brutas[0]
-    colunas = {}
-    for indice, valor in enumerate(cabecalho):
-        chave = CABECALHOS_ALUNOS.get(normalizar(valor))
-        if chave and chave not in colunas:
-            colunas[chave] = indice
-
-    faltando = {'matricula', 'nome', 'turma'} - colunas.keys()
-    if faltando:
-        raise ValueError(
-            'A primeira linha da planilha precisa ter as colunas Matrícula, Nome e Turma. '
-            f'Não encontrei: {", ".join(sorted(faltando))}.'
-        )
-
-    def valor_da_coluna(valores, chave):
-        indice = colunas[chave]
-        return valores[indice] if indice < len(valores) else None
-
-    linhas = []
-    for numero_linha, valores in enumerate(linhas_brutas[1:], start=2):
-        matricula_bruta = valor_da_coluna(valores, 'matricula')
-        nome_bruto = valor_da_coluna(valores, 'nome')
-        turma_bruta = valor_da_coluna(valores, 'turma')
-        if matricula_bruta in (None, '') and nome_bruto in (None, '') and turma_bruta in (None, ''):
-            continue  # linha em branco, comum no final de planilhas exportadas
-
-        matricula = digitos(matricula_bruta)
-        nome = texto(nome_bruto)
-        turma = texto(turma_bruta).upper()
-
-        erro = None
-        if not matricula or not nome or not turma:
-            erro = 'Matrícula, nome ou turma em branco.'
-        elif not 6 <= len(matricula) <= 12:
-            erro = 'Matrícula deve ter entre 6 e 12 dígitos.'
-        elif len(turma) > 10:
-            erro = 'Código de turma maior que 10 caracteres.'
-
-        linhas.append({'linha': numero_linha, 'matricula': matricula, 'nome': nome, 'turma': turma, 'erro': erro})
-
-    if not linhas:
-        raise ValueError('Nenhuma linha de aluno foi encontrada na planilha.')
-    return linhas
-
-
-CABECALHOS_IMPORTACAO_COMPLETA = {
-    'turma': 'turma',
-    'matricula': 'matricula_aluno',
-    'matricula aluno': 'matricula_aluno',
-    'matricula do aluno': 'matricula_aluno',
-    'nome aluno': 'nome_aluno',
-    'nome do aluno': 'nome_aluno',
-    'nome responsavel': 'nome_responsavel',
-    'nome do responsavel': 'nome_responsavel',
-    'cpf': 'cpf_responsavel',
-    'cpf responsavel': 'cpf_responsavel',
-    'cpf do responsavel': 'cpf_responsavel',
-    'telefone': 'telefone_responsavel',
-    'telefone responsavel': 'telefone_responsavel',
-    'telefone do responsavel': 'telefone_responsavel',
-    'email': 'email_responsavel',
-    'email responsavel': 'email_responsavel',
-    'email do responsavel': 'email_responsavel',
-    'senha': 'senha_responsavel',
-    'senha responsavel': 'senha_responsavel',
-    'senha do responsavel': 'senha_responsavel',
-}
-
-COLUNAS_OBRIGATORIAS_IMPORTACAO_COMPLETA = {'turma', 'matricula_aluno', 'nome_aluno'}
-COLUNAS_RESPONSAVEL_IMPORTACAO_COMPLETA = (
-    'nome_responsavel', 'cpf_responsavel', 'telefone_responsavel', 'email_responsavel'
-)
-
-
-def extrair_importacao_completa_planilha(arquivo):
-    """Lê a planilha unificada de Turma + Aluno + Responsável.
-
-    Uma linha por aluno. Quando dois alunos são irmãos, o responsável se
-    repete nas duas linhas (mesmo CPF) — quem decide se cria ou só vincula
-    é o próprio endpoint de importação, com base no CPF já visto.
-
-    A coluna de senha é opcional tanto na planilha quanto por linha: quando
-    ausente, o próprio endpoint gera uma senha provisória a partir do CPF.
-    """
-    try:
-        wb = load_workbook(arquivo, data_only=True, read_only=True)
-    except Exception as exc:
-        raise ValueError('Não foi possível ler a planilha. Envie um arquivo .xlsx válido.') from exc
-
-    ws = wb.active
-    linhas_brutas = list(ws.iter_rows(values_only=True))
-    if not linhas_brutas:
-        raise ValueError('A planilha está vazia.')
-
-    cabecalho = linhas_brutas[0]
-    colunas = {}
-    for indice, valor in enumerate(cabecalho):
-        chave = CABECALHOS_IMPORTACAO_COMPLETA.get(normalizar(valor))
-        if chave and chave not in colunas:
-            colunas[chave] = indice
-
-    faltando = COLUNAS_OBRIGATORIAS_IMPORTACAO_COMPLETA - colunas.keys()
-    if faltando:
-        raise ValueError(
-            'A primeira linha da planilha precisa ter as colunas Turma, Matrícula Aluno e Nome Aluno. '
-            f'Não encontrei: {", ".join(sorted(faltando))}.'
-        )
-
-    def valor_da_coluna(valores, chave):
-        if chave not in colunas:
-            return None
-        indice = colunas[chave]
-        return valores[indice] if indice < len(valores) else None
-
-    linhas = []
-    for numero_linha, valores in enumerate(linhas_brutas[1:], start=2):
-        turma = texto(valor_da_coluna(valores, 'turma')).upper()
-        matricula_aluno = digitos(valor_da_coluna(valores, 'matricula_aluno'))
-        nome_aluno = texto(valor_da_coluna(valores, 'nome_aluno'))
-        nome_resp = texto(valor_da_coluna(valores, 'nome_responsavel'))
-        cpf_resp = digitos(valor_da_coluna(valores, 'cpf_responsavel'))
-        telefone_resp = digitos(valor_da_coluna(valores, 'telefone_responsavel'))
-        email_resp = texto(valor_da_coluna(valores, 'email_responsavel')).lower()
-        senha_resp = texto(valor_da_coluna(valores, 'senha_responsavel'))
-
-        if not any((turma, matricula_aluno, nome_aluno, nome_resp, cpf_resp, telefone_resp, email_resp)):
-            continue  # linha em branco
-
-        erro = None
-        if not turma or not matricula_aluno or not nome_aluno:
-            erro = 'Turma, matrícula do aluno e nome do aluno são obrigatórios.'
-        elif not 6 <= len(matricula_aluno) <= 12:
-            erro = 'Matrícula do aluno deve ter entre 6 e 12 dígitos.'
-        elif len(turma) > 10:
-            erro = 'Código de turma maior que 10 caracteres.'
-
-        campos_resp = (nome_resp, cpf_resp, telefone_resp, email_resp)
-        tem_algum_campo_resp = any(campos_resp)
-        tem_responsavel = all(campos_resp)
-        if erro is None and tem_algum_campo_resp and not tem_responsavel:
-            erro = ('Dados do responsável incompletos — preencha nome, CPF, telefone e email do '
-                     'responsável, ou deixe as quatro colunas em branco.')
-        elif erro is None and tem_responsavel:
-            if len(cpf_resp) != 11:
-                erro = 'CPF do responsável deve ter 11 dígitos.'
-            elif len(telefone_resp) not in (10, 11):
-                erro = 'Telefone do responsável deve ter 10 ou 11 dígitos.'
-            elif '@' not in email_resp:
-                erro = 'Email do responsável inválido.'
-            elif senha_resp and len(senha_resp) < 6:
-                erro = 'Senha do responsável deve ter pelo menos 6 caracteres.'
-
-        linhas.append({
-            'linha': numero_linha, 'turma': turma, 'matricula_aluno': matricula_aluno,
-            'nome_aluno': nome_aluno, 'tem_responsavel': tem_responsavel,
-            'nome_responsavel': nome_resp, 'cpf_responsavel': cpf_resp,
-            'telefone_responsavel': telefone_resp, 'email_responsavel': email_resp,
-            'senha_responsavel': senha_resp, 'erro': erro,
-        })
-
-    if not linhas:
-        raise ValueError('Nenhuma linha de aluno foi encontrada na planilha.')
-    return linhas
-
-
 def materia_id_por_nome(cur, nome):
     cur.execute('SELECT id_materia FROM Materia WHERE nome = %s', (nome,))
     row = cur.fetchone()
@@ -394,14 +199,78 @@ def resumo():
         ''')['total'],
         'alunos': fetch_one('SELECT COUNT(*) total FROM Aluno WHERE ativo = TRUE')['total'],
         'turmas': fetch_one('SELECT COUNT(*) total FROM Turma')['total'],
-        'materias': fetch_one('SELECT COUNT(*) total FROM Materia WHERE ativo = TRUE')['total'],
     })
 
 
 @admin_bp.route('/materias', methods=['GET'])
 @papel_obrigatorio('administrador')
 def materias():
-    return jsonify(fetch_all('SELECT id_materia, nome FROM Materia WHERE ativo = TRUE ORDER BY nome'))
+    incluir_inativos = request.args.get('incluir_inativos') == '1'
+    filtro = '' if incluir_inativos else 'WHERE ativo = TRUE'
+    return jsonify(fetch_all(f'SELECT id_materia, nome, ativo FROM Materia {filtro} ORDER BY nome'))
+
+
+@admin_bp.route('/materias', methods=['POST'])
+@papel_obrigatorio('administrador')
+def criar_materia():
+    """Prioridade 8/7: cadastro de disciplinas passa a ter uma tela própria
+    (antes só existiam implicitamente, criadas junto com a importação da
+    grade de horários — routes/admin.py::materia_id_por_nome)."""
+    dados = request.get_json() or {}
+    nome = re.sub(r'\s+', ' ', texto(dados.get('nome'))).strip()
+    if not nome:
+        return jsonify({'erro': 'Informe o nome da disciplina.'}), 400
+    if len(nome) > 100:
+        return jsonify({'erro': 'O nome da disciplina deve ter até 100 caracteres.'}), 400
+
+    existente = fetch_one('SELECT id_materia, ativo FROM Materia WHERE nome = %s', (nome,))
+    if existente:
+        if existente['ativo']:
+            return jsonify({'erro': 'Esta disciplina já está cadastrada.'}), 409
+        execute('UPDATE Materia SET ativo = TRUE WHERE id_materia = %s', (existente['id_materia'],))
+        return jsonify({'mensagem': 'Disciplina reativada com sucesso.'}), 200
+
+    execute('INSERT INTO Materia (nome) VALUES (%s)', (nome,))
+    return jsonify({'mensagem': 'Disciplina cadastrada com sucesso.'}), 201
+
+
+@admin_bp.route('/materias/<int:id_materia>', methods=['PUT'])
+@papel_obrigatorio('administrador')
+def editar_materia(id_materia):
+    dados = request.get_json() or {}
+    nome = re.sub(r'\s+', ' ', texto(dados.get('nome'))).strip()
+    if not nome:
+        return jsonify({'erro': 'Informe o nome da disciplina.'}), 400
+    if len(nome) > 100:
+        return jsonify({'erro': 'O nome da disciplina deve ter até 100 caracteres.'}), 400
+    if not fetch_one('SELECT id_materia FROM Materia WHERE id_materia = %s', (id_materia,)):
+        return jsonify({'erro': 'Disciplina não encontrada.'}), 404
+    try:
+        execute('UPDATE Materia SET nome = %s WHERE id_materia = %s', (nome, id_materia))
+    except IntegrityError:
+        return jsonify({'erro': 'Já existe uma disciplina com esse nome.'}), 409
+    return jsonify({'mensagem': 'Disciplina atualizada com sucesso.'})
+
+
+@admin_bp.route('/materias/<int:id_materia>', methods=['DELETE'])
+@papel_obrigatorio('administrador')
+def desativar_materia(id_materia):
+    # Desativação lógica (mesmo padrão usado para aluno/professor/etc.):
+    # preserva o histórico de horários e vínculos com professores já
+    # existentes, só deixa de aparecer para novos cadastros.
+    if not fetch_one('SELECT id_materia FROM Materia WHERE id_materia = %s', (id_materia,)):
+        return jsonify({'erro': 'Disciplina não encontrada.'}), 404
+    execute('UPDATE Materia SET ativo = FALSE WHERE id_materia = %s', (id_materia,))
+    return jsonify({'mensagem': 'Disciplina desativada com sucesso.'})
+
+
+@admin_bp.route('/materias/<int:id_materia>/reativar', methods=['POST'])
+@papel_obrigatorio('administrador')
+def reativar_materia(id_materia):
+    if not fetch_one('SELECT id_materia FROM Materia WHERE id_materia = %s', (id_materia,)):
+        return jsonify({'erro': 'Disciplina não encontrada.'}), 404
+    execute('UPDATE Materia SET ativo = TRUE WHERE id_materia = %s', (id_materia,))
+    return jsonify({'mensagem': 'Disciplina reativada com sucesso.'})
 
 
 @admin_bp.route('/turmas', methods=['GET'])
@@ -501,6 +370,8 @@ def criar_aluno():
     matricula = texto(dados.get('matricula'))
     if not nome or not turma or not matricula:
         return jsonify({'erro': 'Nome, turma e matrícula são obrigatórios.'}), 400
+    if not nome_valido(nome):
+        return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if not matricula.isdigit() or not 6 <= len(matricula) <= 12:
         return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
 
@@ -522,221 +393,6 @@ def criar_aluno():
     finally:
         cur.close()
         conn.close()
-
-
-@admin_bp.route('/alunos/importar', methods=['POST'])
-@papel_obrigatorio('administrador')
-def importar_alunos():
-    arquivo = request.files.get('planilha')
-    if not arquivo or not arquivo.filename or not arquivo.filename.lower().endswith('.xlsx'):
-        return jsonify({'erro': 'Selecione uma planilha .xlsx válida.'}), 400
-    try:
-        linhas = extrair_alunos_planilha(arquivo.stream)
-    except ValueError as exc:
-        return jsonify({'erro': str(exc)}), 400
-
-    conn = get_connection()
-    cur = conn.cursor(buffered=True)
-    importados = 0
-    duplicados = []
-    turma_invalida = []
-    invalidos = []
-    matriculas_na_planilha = set()
-    try:
-        cur.execute('SELECT codigo FROM Turma')
-        turmas_existentes = {row[0] for row in cur.fetchall()}
-
-        for linha in linhas:
-            if linha['erro']:
-                invalidos.append({'linha': linha['linha'], 'motivo': linha['erro']})
-                continue
-
-            matricula = linha['matricula']
-            if matricula in matriculas_na_planilha:
-                duplicados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} repetida na própria planilha.'})
-                continue
-
-            if linha['turma'] not in turmas_existentes:
-                turma_invalida.append({'linha': linha['linha'], 'motivo': f'Turma "{linha["turma"]}" não está cadastrada.'})
-                continue
-
-            cur.execute('SELECT ativo FROM Aluno WHERE matricula = %s', (matricula,))
-            existente = cur.fetchone()
-            if existente:
-                situacao = 'ativo' if existente[0] else 'desativado (use Reativar)'
-                duplicados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} já cadastrada ({situacao}).'})
-                continue
-
-            cur.execute(
-                'INSERT INTO Aluno (matricula, nome, turma) VALUES (%s, %s, %s)',
-                (matricula, linha['nome'], linha['turma'])
-            )
-            matriculas_na_planilha.add(matricula)
-            importados += 1
-
-        conn.commit()
-    except IntegrityError as exc:
-        conn.rollback()
-        return jsonify({'erro': erro_integridade(exc)}), 409
-    except Exception as exc:
-        conn.rollback()
-        import traceback
-        traceback.print_exc()
-        return jsonify({'erro': f'Erro ao processar a planilha: {exc}'}), 500
-    finally:
-        cur.close()
-        conn.close()
-
-    ignorados = invalidos + duplicados + turma_invalida
-    return jsonify({
-        'mensagem': f'Importação concluída: {importados} aluno(s) cadastrado(s).',
-        'importados': importados,
-        'ignorados': len(ignorados),
-        'detalhes_ignorados': ignorados[:50],
-    }), 201
-
-
-@admin_bp.route('/importar-completo', methods=['POST'])
-@papel_obrigatorio('administrador')
-def importar_completo():
-    """Importação unificada: cria turma (se faltar), aluno e responsável a
-    partir de uma única planilha, uma linha por aluno.
-
-    Irmãos (mesmo CPF de responsável) são detectados e vinculados ao mesmo
-    responsável, sem duplicar o cadastro. Quando a senha do responsável não
-    é informada, usamos os 6 primeiros dígitos do CPF como senha provisória.
-    """
-    arquivo = request.files.get('planilha')
-    if not arquivo or not arquivo.filename or not arquivo.filename.lower().endswith('.xlsx'):
-        return jsonify({'erro': 'Selecione uma planilha .xlsx válida.'}), 400
-    try:
-        linhas = extrair_importacao_completa_planilha(arquivo.stream)
-    except ValueError as exc:
-        return jsonify({'erro': str(exc)}), 400
-
-    conn = get_connection()
-    cur = conn.cursor(buffered=True)
-    importados_alunos = 0
-    importados_responsaveis = 0
-    vinculados_a_responsavel_existente = 0
-    turmas_criadas = set()
-    ignorados = []
-    credenciais_criadas = []
-    responsaveis_cache = {}  # cpf -> id_responsavel, resolvido nesta importação
-    matriculas_na_planilha = set()
-    try:
-        cur.execute('SELECT codigo FROM Turma')
-        turmas_existentes = {row[0] for row in cur.fetchall()}
-
-        for linha in linhas:
-            if linha['erro']:
-                ignorados.append({'linha': linha['linha'], 'motivo': linha['erro']})
-                continue
-
-            matricula = linha['matricula_aluno']
-            turma = linha['turma']
-
-            if matricula in matriculas_na_planilha:
-                ignorados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} repetida na própria planilha.'})
-                continue
-
-            if turma not in turmas_existentes:
-                cur.execute('INSERT INTO Turma (codigo) VALUES (%s)', (turma,))
-                turmas_existentes.add(turma)
-                turmas_criadas.add(turma)
-
-            id_responsavel = None
-            if linha['tem_responsavel']:
-                cpf = linha['cpf_responsavel']
-                if cpf in responsaveis_cache:
-                    id_responsavel = responsaveis_cache[cpf]
-                else:
-                    cur.execute('SELECT id_responsavel FROM Responsavel WHERE cpf = %s', (cpf,))
-                    existente_resp = cur.fetchone()
-                    if existente_resp:
-                        id_responsavel = existente_resp[0]
-                        responsaveis_cache[cpf] = id_responsavel
-                        vinculados_a_responsavel_existente += 1
-                    else:
-                        email_resp = linha['email_responsavel']
-                        cur.execute('SELECT id_usuario FROM Usuario WHERE email = %s', (email_resp,))
-                        if cur.fetchone():
-                            ignorados.append({
-                                'linha': linha['linha'],
-                                'motivo': f'Email {email_resp} já pertence a outro usuário; o aluno foi cadastrado sem responsável vinculado.'
-                            })
-                        else:
-                            senha_resp = linha['senha_responsavel'] or linha['cpf_responsavel'][:6]
-                            senha_hash = generate_password_hash(senha_resp)
-                            cur.execute(
-                                'INSERT INTO Usuario (email, senha, telefone, nivel_acesso) VALUES (%s, %s, %s, 1)',
-                                (email_resp, senha_hash, linha['telefone_responsavel'])
-                            )
-                            id_usuario = cur.lastrowid
-                            cur.execute(
-                                'INSERT INTO Responsavel (id_usuario, cpf, nome, telefone, primeiro_login) '
-                                'VALUES (%s, %s, %s, %s, TRUE)',
-                                (id_usuario, cpf, linha['nome_responsavel'], linha['telefone_responsavel'])
-                            )
-                            id_responsavel = cur.lastrowid
-                            responsaveis_cache[cpf] = id_responsavel
-                            importados_responsaveis += 1
-                            credenciais_criadas.append({
-                                'responsavel': linha['nome_responsavel'],
-                                'email': email_resp,
-                                'senha_provisoria': senha_resp,
-                            })
-
-            cur.execute('SELECT ativo, id_responsavel FROM Aluno WHERE matricula = %s', (matricula,))
-            aluno_existente = cur.fetchone()
-            if aluno_existente:
-                ativo, resp_atual = aluno_existente
-                if not ativo:
-                    ignorados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} pertence a aluno desativado (use Reativar).'})
-                elif resp_atual is not None:
-                    ignorados.append({'linha': linha['linha'], 'motivo': f'Matrícula {matricula} já cadastrada e já vinculada a um responsável.'})
-                else:
-                    if id_responsavel:
-                        cur.execute('UPDATE Aluno SET id_responsavel = %s WHERE matricula = %s', (id_responsavel, matricula))
-                    matriculas_na_planilha.add(matricula)
-            else:
-                cur.execute(
-                    'INSERT INTO Aluno (matricula, nome, turma, id_responsavel) VALUES (%s, %s, %s, %s)',
-                    (matricula, linha['nome_aluno'], turma, id_responsavel)
-                )
-                matriculas_na_planilha.add(matricula)
-                importados_alunos += 1
-
-        conn.commit()
-    except IntegrityError as exc:
-        conn.rollback()
-        return jsonify({'erro': erro_integridade(exc)}), 409
-    except Exception as exc:
-        conn.rollback()
-        import traceback
-        traceback.print_exc()
-        return jsonify({'erro': f'Erro ao processar a planilha: {exc}'}), 500
-    finally:
-        cur.close()
-        conn.close()
-
-    return jsonify({
-        'mensagem': (
-            f'Importação concluída: {importados_alunos} aluno(s), {importados_responsaveis} '
-            f'responsável(is) novo(s) e {len(turmas_criadas)} turma(s) criada(s).'
-        ),
-        'importados_alunos': importados_alunos,
-        'importados_responsaveis': importados_responsaveis,
-        'vinculados_a_responsavel_existente': vinculados_a_responsavel_existente,
-        'turmas_criadas': sorted(turmas_criadas),
-        'ignorados': len(ignorados),
-        'detalhes_ignorados': ignorados[:50],
-        'credenciais_criadas': credenciais_criadas[:100],
-        'aviso_senha': (
-            'Quando a coluna Senha vem em branco, a senha provisória do responsável são os 6 '
-            'primeiros dígitos do CPF. Oriente os responsáveis a trocarem a senha no primeiro acesso.'
-        ),
-    }), 201
 
 
 @admin_bp.route('/alunos/<matricula>', methods=['DELETE'])
@@ -872,6 +528,8 @@ def criar_pessoa(dados, nivel_acesso, tabela):
 
     if not nome or not email_normalizado or not senha:
         return None, (jsonify({'erro': 'Nome, email e senha são obrigatórios.'}), 400)
+    if not nome_valido(nome):
+        return None, (jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400)
     if len(senha) < 8:
         return None, (jsonify({'erro': 'A senha inicial deve ter pelo menos 8 caracteres.'}), 400)
     if telefone and len(telefone) not in (10, 11):
@@ -938,6 +596,8 @@ def criar_professor():
 
     if not nome or not email_normalizado or not senha:
         return jsonify({'erro': 'Nome, email e senha são obrigatórios.'}), 400
+    if not nome_valido(nome):
+        return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if len(senha) < 8:
         return jsonify({'erro': 'A senha inicial deve ter pelo menos 8 caracteres.'}), 400
     if telefone and len(telefone) not in (10, 11):
@@ -1148,6 +808,8 @@ def editar_aluno(matricula):
     turma = texto(dados.get('turma')).upper()
     if not nome or not turma or not nova_matricula:
         return jsonify({'erro': 'Nome, turma e matrícula são obrigatórios.'}), 400
+    if not nome_valido(nome):
+        return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if not nova_matricula.isdigit() or not 6 <= len(nova_matricula) <= 12:
         return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
     try:
@@ -1188,6 +850,7 @@ def editar_professor(matricula):
     try: ids_materias = ler_ids_materias(dados)
     except ValueError as exc: return jsonify({'erro': str(exc)}), 400
     if not nome or not email_normalizado: return jsonify({'erro': 'Nome e email são obrigatórios.'}), 400
+    if not nome_valido(nome): return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if telefone and len(telefone) not in (10, 11): return jsonify({'erro': 'O telefone deve conter 10 ou 11 dígitos.'}), 400
     conn=get_connection(); cur=conn.cursor()
     try:
@@ -1235,6 +898,7 @@ def editar_professor(matricula):
 def editar_pessoa_simples(tabela, coluna_id, valor_id):
     dados=request.get_json() or {}; nome=texto(dados.get('nome')); email_normalizado=email(dados.get('email')); telefone=digitos(dados.get('telefone')) or None
     if not nome or not email_normalizado: return None,(jsonify({'erro':'Nome e email são obrigatórios.'}),400)
+    if not nome_valido(nome): return None,(jsonify({'erro':MENSAGEM_NOME_INVALIDO}),400)
     if telefone and len(telefone) not in (10,11): return None,(jsonify({'erro':'O telefone deve conter 10 ou 11 dígitos.'}),400)
     conn=get_connection(); cur=conn.cursor()
     try:
@@ -1333,6 +997,8 @@ def criar_responsavel_admin():
 
     if not all((nome, cpf, telefone, email_normalizado, senha, matricula)):
         return jsonify({'erro': 'Nome, CPF, telefone, email, senha e matrícula são obrigatórios.'}), 400
+    if not nome_valido(nome):
+        return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if not matricula.isdigit() or not 6 <= len(matricula) <= 12:
         return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
     if len(cpf) != 11:
@@ -1375,29 +1041,54 @@ def criar_responsavel_admin():
         cur.close(); conn.close()
 
 
-@admin_bp.route('/responsaveis/<int:id_responsavel>/senha', methods=['PUT'])
-@papel_obrigatorio('administrador')
-def resetar_senha_responsavel(id_responsavel):
-    """Permite ao administrador definir uma nova senha para um responsável
-    que tenha esquecido a sua e pedido ajuda (ver tela 'Esqueci minha senha')."""
-    dados = request.get_json() or {}
-    senha_nova = str(dados.get('senha_nova') or '')
-    if len(senha_nova) < 6:
-        return jsonify({'erro': 'A nova senha deve possuir pelo menos 6 caracteres.'}), 400
+TABELA_SENHA_POR_TIPO = {
+    # tipo (usado na URL) -> (tabela, coluna PK da tabela, rótulo pro humano)
+    'professores':   ('Professor',    'matricula',       'professor(a)'),
+    'coordenadores': ('Coordenador',  'id_coordenador',  'coordenador(a) / gestão'),
+    'porteiros':     ('Porteiro',     'id_porteiro',     'porteiro(a)'),
+    'responsaveis':  ('Responsavel',  'id_responsavel',  'responsável'),
+}
 
-    conn = get_connection(); cur = conn.cursor()
-    try:
-        cur.execute('SELECT id_usuario, nome FROM Responsavel WHERE id_responsavel = %s', (id_responsavel,))
-        row = cur.fetchone()
-        if not row:
-            return jsonify({'erro': 'Responsável não encontrado.'}), 404
-        id_usuario, nome = row
-        cur.execute('UPDATE Usuario SET senha = %s WHERE id_usuario = %s',
-                    (generate_password_hash(senha_nova), id_usuario))
-        conn.commit()
-        return jsonify({'mensagem': f'Senha de {nome} redefinida com sucesso.'})
-    finally:
-        cur.close(); conn.close()
+
+@admin_bp.route('/usuarios/<tipo>/<int:id_pessoa>/senha', methods=['PUT'])
+@papel_obrigatorio('administrador')
+def redefinir_senha_usuario(tipo, id_pessoa):
+    """Redefinição de senha pelo Administrador, para qualquer perfil que
+    tenha login: professor, coordenador (Gestão), porteiro ou responsável.
+    Generaliza o que antes só existia para responsável — mesma rota,
+    mesma validação, mesmo mecanismo de hash, só muda a tabela consultada.
+    (O próprio Administrador troca a própria senha pela tela de Perfil,
+    via /api/auth/senha — não por aqui.)"""
+    info = TABELA_SENHA_POR_TIPO.get(tipo)
+    if not info:
+        return jsonify({'erro': 'Tipo de usuário inválido.'}), 400
+    tabela, coluna_pk, rotulo = info
+
+    dados = request.get_json() or {}
+    nova_senha = str(dados.get('senha_nova') or '')
+    confirmacao = str(dados.get('senha_confirmacao') or '')
+
+    if not nova_senha or not confirmacao:
+        return jsonify({'erro': 'Informe a nova senha e a confirmação.'}), 400
+    if len(nova_senha) < 6:
+        return jsonify({'erro': 'A nova senha deve ter pelo menos 6 caracteres.'}), 400
+    if nova_senha != confirmacao:
+        return jsonify({'erro': 'As senhas não coincidem.'}), 400
+
+    pessoa = fetch_one(
+        f'SELECT id_usuario, nome FROM {tabela} WHERE {coluna_pk} = %s',
+        (id_pessoa,)
+    )
+    if not pessoa:
+        return jsonify({'erro': f'Este {rotulo} não foi encontrado.'}), 404
+
+    # Mesmo mecanismo de hash usado em todo o resto do projeto
+    # (auth.py::login/atualizar_senha, admin.py::criar_pessoa). Nunca em texto puro.
+    execute(
+        'UPDATE Usuario SET senha = %s WHERE id_usuario = %s',
+        (generate_password_hash(nova_senha), pessoa['id_usuario'])
+    )
+    return jsonify({'mensagem': f'Senha de {pessoa["nome"]} redefinida com sucesso.'})
 
 
 @admin_bp.route('/ocorrencias', methods=['GET'])
@@ -1459,26 +1150,6 @@ def grade_turma(codigo):
           FIELD(h.dia_da_semana,'Segunda','Terca','Quarta','Quinta','Sexta','Sabado','Domingo'),
           h.hr_inicio
     ''', (codigo,)))
-
-
-@admin_bp.route('/grade-geral', methods=['GET'])
-@papel_obrigatorio('administrador')
-def grade_geral():
-    """Visão consolidada: a grade vigente HOJE de todas as turmas, numa
-    tabela só. Não traz histórico nem vigências futuras — só o que está
-    valendo agora, que é o que a gestão quer enxergar de uma vez."""
-    return jsonify(fetch_all('''
-        SELECT h.id_horario, h.turma, h.dia_da_semana, h.hr_inicio, h.hr_final,
-               m.nome AS materia, h.matricula_professor, p.nome AS professor
-        FROM Horario h
-        JOIN Materia m ON m.id_materia = h.id_materia
-        LEFT JOIN Professor p ON p.matricula = h.matricula_professor
-        WHERE h.data_inicio_vigencia <= CURDATE()
-          AND (h.data_fim_vigencia IS NULL OR h.data_fim_vigencia >= CURDATE())
-        ORDER BY h.turma,
-          FIELD(h.dia_da_semana,'Segunda','Terca','Quarta','Quinta','Sexta','Sabado','Domingo'),
-          h.hr_inicio
-    '''))
 
 
 @admin_bp.route('/horarios/<int:id_horario>/professor', methods=['PUT'])
@@ -1630,3 +1301,307 @@ def atualizar_grade_turma(codigo):
         conn.rollback(); return jsonify({'erro': erro_integridade(exc)}), 409
     finally:
         cur.close(); conn.close()
+
+
+# ============================================================
+# PRIORIDADE 6 — Importação em lote (Disciplinas / Professores / Alunos)
+#
+# Não confundir com a importação de GRADE DE HORÁRIOS (extrair_grade_planilha,
+# usada em criar_turma/atualizar_grade_turma): aquela lê aulas de uma turma;
+# esta lê cadastros (disciplinas, professores ou alunos) para inserir em lote.
+#
+# Fluxo em duas etapas, como pedido: /preview só valida e devolve o resumo
+# (Encontrados/Válidos/Com erro) SEM gravar nada; /confirmar grava só as
+# linhas válidas, e nunca insere uma linha inválida silenciosamente.
+# ============================================================
+
+TIPOS_IMPORTACAO = ('disciplinas', 'professores', 'alunos')
+
+
+def ler_linhas_planilha(arquivo):
+    """Lê um arquivo de importação (.csv ou .xlsx) enviado via upload e
+    devolve uma lista de dicts (um por linha de dados), com a chave
+    especial '_linha' indicando o número da linha na planilha original
+    (contando o cabeçalho como linha 1, para bater com o que o usuário vê
+    ao abrir o arquivo)."""
+    nome_arquivo = (arquivo.filename or '').lower()
+
+    if nome_arquivo.endswith('.xlsx'):
+        try:
+            planilha = load_workbook(arquivo.stream, data_only=True, read_only=True)
+        except Exception:
+            raise ValueError('Não foi possível ler o arquivo .xlsx. Verifique se ele não está corrompido.')
+        aba = planilha.active
+        linhas_brutas = [[celula.value for celula in linha] for linha in aba.iter_rows()]
+    elif nome_arquivo.endswith('.csv'):
+        bruto = arquivo.stream.read()
+        try:
+            texto_arquivo = bruto.decode('utf-8-sig')
+        except UnicodeDecodeError:
+            texto_arquivo = bruto.decode('latin-1')
+        # Planilhas exportadas em pt-BR costumam usar ';' como separador
+        # (porque ',' já é o separador decimal); tenta detectar automaticamente.
+        try:
+            delimitador = csv.Sniffer().sniff(texto_arquivo.splitlines()[0], delimiters=',;').delimiter
+        except (csv.Error, IndexError):
+            delimitador = ','
+        linhas_brutas = list(csv.reader(io.StringIO(texto_arquivo), delimiter=delimitador))
+    else:
+        raise ValueError('Envie um arquivo .csv ou .xlsx.')
+
+    linhas_brutas = [linha for linha in linhas_brutas if linha is not None]
+    if not linhas_brutas:
+        raise ValueError('A planilha está vazia.')
+
+    cabecalho = [normalizar(c) for c in linhas_brutas[0]]
+    if not any(cabecalho):
+        raise ValueError('Não foi possível identificar o cabeçalho da planilha.')
+
+    linhas = []
+    for indice, linha in enumerate(linhas_brutas[1:], start=2):
+        if all(c is None or str(c).strip() == '' for c in linha):
+            continue  # ignora linhas em branco no meio da planilha
+        registro = {cabecalho[i]: (linha[i] if i < len(linha) else None) for i in range(len(cabecalho))}
+        registro['_linha'] = indice
+        linhas.append(registro)
+
+    if not linhas:
+        raise ValueError('A planilha não tem nenhuma linha de dados (só o cabeçalho).')
+    return linhas
+
+
+def _ok(linha, dados):
+    return {'linha': linha, 'valido': True, 'dados': dados}
+
+
+def _erro(linha, motivo, tipo='invalido'):
+    # tipo: 'invalido' (dado errado) ou 'duplicado' (já existe/já está na
+    # planilha) — usados pra separar "com erro" de "já cadastrado" no resumo.
+    return {'linha': linha, 'valido': False, 'motivo': motivo, 'tipo': tipo}
+
+
+def validar_linhas_disciplinas(linhas):
+    nomes_banco_ativas = {normalizar(r['nome']) for r in fetch_all('SELECT nome FROM Materia WHERE ativo = TRUE')}
+    vistos = set()
+    resultado = []
+    for registro in linhas:
+        nome = re.sub(r'\s+', ' ', texto(registro.get('nome'))).strip()
+        if not nome:
+            resultado.append(_erro(registro['_linha'], 'Nome da disciplina não informado.'))
+            continue
+        if len(nome) > 100:
+            resultado.append(_erro(registro['_linha'], 'Nome da disciplina deve ter até 100 caracteres.'))
+            continue
+        chave = normalizar(nome)
+        if chave in vistos:
+            resultado.append(_erro(registro['_linha'], 'Disciplina duplicada na própria planilha.', tipo='duplicado'))
+            continue
+        if chave in nomes_banco_ativas:
+            resultado.append(_erro(registro['_linha'], 'Disciplina já cadastrada.', tipo='duplicado'))
+            continue
+        vistos.add(chave)
+        resultado.append(_ok(registro['_linha'], {'nome': nome}))
+    return resultado
+
+
+def validar_linhas_professores(linhas):
+    emails_banco = {r['email'] for r in fetch_all('SELECT email FROM Usuario')}
+    emails_vistos = set()
+    resultado = []
+    for registro in linhas:
+        nome = texto(registro.get('nome'))
+        email_normalizado = email(registro.get('email'))
+        senha = str(registro.get('senha') or '').strip()
+        telefone = digitos(registro.get('telefone')) or None
+        materias_txt = texto(registro.get('materias') or registro.get('materia'))
+        linha = registro['_linha']
+
+        if not nome_valido(nome):
+            resultado.append(_erro(linha, MENSAGEM_NOME_INVALIDO)); continue
+        if not email_normalizado or '@' not in email_normalizado:
+            resultado.append(_erro(linha, 'Email inválido.')); continue
+        if len(senha) < 8:
+            resultado.append(_erro(linha, 'Senha deve ter pelo menos 8 caracteres.')); continue
+        if telefone and len(telefone) not in (10, 11):
+            resultado.append(_erro(linha, 'Telefone inválido (deve ter 10 ou 11 dígitos).')); continue
+        nomes_materias = [re.sub(r'\s+', ' ', m).strip() for m in materias_txt.split(';') if m.strip()]
+        if not nomes_materias:
+            resultado.append(_erro(linha, 'Informe ao menos uma matéria (separadas por ";").')); continue
+        if email_normalizado in emails_vistos:
+            resultado.append(_erro(linha, 'Email duplicado na própria planilha.', tipo='duplicado')); continue
+        if email_normalizado in emails_banco:
+            resultado.append(_erro(linha, 'Professor já cadastrado (email já existe).', tipo='duplicado')); continue
+
+        emails_vistos.add(email_normalizado)
+        resultado.append(_ok(linha, {
+            'nome': nome, 'email': email_normalizado, 'senha': senha,
+            'telefone': telefone, 'materias': nomes_materias,
+        }))
+    return resultado
+
+
+def validar_linhas_alunos(linhas):
+    turmas_existentes = {r['codigo'] for r in fetch_all('SELECT codigo FROM Turma')}
+    matriculas_banco = {r['matricula'] for r in fetch_all('SELECT matricula FROM Aluno')}
+    matriculas_vistas = set()
+    resultado = []
+    for registro in linhas:
+        matricula = digitos(registro.get('matricula'))
+        nome = texto(registro.get('nome'))
+        turma = texto(registro.get('turma')).upper()
+        linha = registro['_linha']
+
+        if not matricula or not (6 <= len(matricula) <= 12):
+            resultado.append(_erro(linha, 'Matrícula inválida (deve ter 6 a 12 dígitos).')); continue
+        if not nome_valido(nome):
+            resultado.append(_erro(linha, MENSAGEM_NOME_INVALIDO)); continue
+        if not turma:
+            resultado.append(_erro(linha, 'Turma não informada.')); continue
+        if turma not in turmas_existentes:
+            resultado.append(_erro(linha, f'Turma "{turma}" não cadastrada. Cadastre a turma antes de importar os alunos.')); continue
+        if matricula in matriculas_vistas:
+            resultado.append(_erro(linha, 'Matrícula duplicada na própria planilha.', tipo='duplicado')); continue
+        if matricula in matriculas_banco:
+            resultado.append(_erro(linha, 'Aluno já cadastrado (matrícula já existe).', tipo='duplicado')); continue
+
+        matriculas_vistas.add(matricula)
+        resultado.append(_ok(linha, {'matricula': matricula, 'nome': nome, 'turma': turma}))
+    return resultado
+
+
+VALIDADORES_IMPORTACAO = {
+    'disciplinas': validar_linhas_disciplinas,
+    'professores': validar_linhas_professores,
+    'alunos': validar_linhas_alunos,
+}
+
+
+def inserir_disciplinas(cur, linhas_validas):
+    inseridas = 0
+    for item in linhas_validas:
+        cur.execute('SELECT id_materia, ativo FROM Materia WHERE nome = %s', (item['dados']['nome'],))
+        existente = cur.fetchone()
+        if existente is None:
+            cur.execute('INSERT INTO Materia (nome) VALUES (%s)', (item['dados']['nome'],))
+            inseridas += 1
+        elif not existente[1]:
+            cur.execute('UPDATE Materia SET ativo = TRUE WHERE id_materia = %s', (existente[0],))
+            inseridas += 1
+        # já existia e ativa: não duplica, não conta como erro (idempotente)
+    return inseridas
+
+
+def inserir_professores(cur, linhas_validas):
+    inseridos = 0
+    for item in linhas_validas:
+        dados = item['dados']
+        cur.execute(
+            'INSERT INTO Usuario (email, senha, telefone, nivel_acesso) VALUES (%s, %s, %s, 2)',
+            (dados['email'], generate_password_hash(dados['senha']), dados['telefone'])
+        )
+        id_usuario = cur.lastrowid
+        cur.execute('INSERT INTO Professor (id_usuario, nome) VALUES (%s, %s)', (id_usuario, dados['nome']))
+        matricula_professor = cur.lastrowid
+        for nome_materia in dados['materias']:
+            id_materia = materia_id_por_nome(cur, nome_materia)
+            cur.execute(
+                'INSERT IGNORE INTO Professor_Materia (matricula_professor, id_materia) VALUES (%s, %s)',
+                (matricula_professor, id_materia)
+            )
+        inseridos += 1
+    return inseridos
+
+
+def inserir_alunos(cur, linhas_validas):
+    inseridos = 0
+    for item in linhas_validas:
+        dados = item['dados']
+        cur.execute(
+            'INSERT INTO Aluno (matricula, nome, turma) VALUES (%s, %s, %s)',
+            (dados['matricula'], dados['nome'], dados['turma'])
+        )
+        inseridos += 1
+    return inseridos
+
+
+INSERIDORES_IMPORTACAO = {
+    'disciplinas': inserir_disciplinas,
+    'professores': inserir_professores,
+    'alunos': inserir_alunos,
+}
+
+
+def _preparar_importacao():
+    """Lê e valida o arquivo enviado; comum a /preview e /confirmar para não
+    duplicar a mesma lógica de leitura/validação nos dois endpoints."""
+    tipo = texto(request.form.get('tipo'))
+    if tipo not in TIPOS_IMPORTACAO:
+        return None, None, (jsonify({'erro': 'Tipo de importação inválido.'}), 400)
+    arquivo = request.files.get('arquivo')
+    if not arquivo or not arquivo.filename:
+        return None, None, (jsonify({'erro': 'Envie um arquivo .csv ou .xlsx.'}), 400)
+    try:
+        linhas = ler_linhas_planilha(arquivo)
+    except ValueError as exc:
+        return None, None, (jsonify({'erro': str(exc)}), 400)
+    resultado = VALIDADORES_IMPORTACAO[tipo](linhas)
+    return tipo, resultado, None
+
+
+@admin_bp.route('/importar/preview', methods=['POST'])
+@papel_obrigatorio('administrador')
+def importar_preview():
+    tipo, resultado, erro = _preparar_importacao()
+    if erro:
+        return erro
+    validas = [r for r in resultado if r['valido']]
+    duplicadas = [r for r in resultado if not r['valido'] and r.get('tipo') == 'duplicado']
+    invalidas = [r for r in resultado if not r['valido'] and r.get('tipo') != 'duplicado']
+    return jsonify({
+        'tipo': tipo,
+        'encontrados': len(resultado),
+        'validos': len(validas),
+        'ja_cadastrados': len(duplicadas),
+        'invalidos': len(invalidas),
+        'erros': [{'linha': r['linha'], 'motivo': r['motivo'], 'tipo': r.get('tipo', 'invalido')} for r in (invalidas + duplicadas)],
+    })
+
+
+@admin_bp.route('/importar/confirmar', methods=['POST'])
+@papel_obrigatorio('administrador')
+def importar_confirmar():
+    tipo, resultado, erro = _preparar_importacao()
+    if erro:
+        return erro
+    validas = [r for r in resultado if r['valido']]
+    duplicadas = [r for r in resultado if not r['valido'] and r.get('tipo') == 'duplicado']
+    invalidas = [r for r in resultado if not r['valido'] and r.get('tipo') != 'duplicado']
+
+    if not validas:
+        return jsonify({
+            'erro': 'Nenhuma linha válida para importar.',
+            'ja_cadastrados': len(duplicadas),
+            'invalidos': len(invalidas),
+            'erros': [{'linha': r['linha'], 'motivo': r['motivo'], 'tipo': r.get('tipo', 'invalido')} for r in (invalidas + duplicadas)],
+        }), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        inseridos = INSERIDORES_IMPORTACAO[tipo](cur, validas)
+        conn.commit()
+    except IntegrityError as exc:
+        conn.rollback()
+        return jsonify({'erro': erro_integridade(exc)}), 409
+    finally:
+        cur.close()
+        conn.close()
+
+    return jsonify({
+        'mensagem': f'{len(resultado)} analisados: {inseridos} importado(s), {len(duplicadas)} já cadastrado(s), {len(invalidas)} com erro.',
+        'analisados': len(resultado),
+        'inseridos': inseridos,
+        'ja_cadastrados': len(duplicadas),
+        'invalidos': len(invalidas),
+        'erros': [{'linha': r['linha'], 'motivo': r['motivo'], 'tipo': r.get('tipo', 'invalido')} for r in (invalidas + duplicadas)],
+    }), 201

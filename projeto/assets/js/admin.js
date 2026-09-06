@@ -70,36 +70,6 @@ function renderizarAlunos() {
 $('#busca-alunos').addEventListener('input', renderizarAlunos);
 $('#filtro-turma-alunos').addEventListener('change', renderizarAlunos);
 
-function renderizarMaterias() {
-  const termo = normalizarTexto($('#busca-materias').value.trim());
-  const lista = (cacheAdmin.materias || []).filter(m => !termo || normalizarTexto(m.nome).includes(termo));
-  $('#lista-materias').innerHTML = renderizarLinhas(lista, ['nome']);
-}
-$('#busca-materias').addEventListener('input', renderizarMaterias);
-
-const DIAS_ABREVIADOS = { Segunda: 'Seg', Terca: 'Ter', Quarta: 'Qua', Quinta: 'Qui', Sexta: 'Sex', Sabado: 'Sáb', Domingo: 'Dom' };
-
-function renderizarGradeGeral() {
-  const turma = $('#filtro-turma-grade-geral').value;
-  const dia = $('#filtro-dia-grade-geral').value;
-  const lista = (cacheAdmin.gradeGeral || []).filter(a =>
-    (!turma || a.turma === turma) && (!dia || a.dia_da_semana === dia)
-  );
-
-  $('#corpo-grade-geral').innerHTML = lista.length
-    ? lista.map(a => `<tr>
-        <td>${escaparHtml(a.turma)}</td>
-        <td>${escaparHtml(DIAS_ABREVIADOS[a.dia_da_semana] || a.dia_da_semana)}</td>
-        <td>${escaparHtml(String(a.hr_inicio).slice(0, 5))}–${escaparHtml(String(a.hr_final).slice(0, 5))}</td>
-        <td>${escaparHtml(a.materia)}</td>
-        <td>${a.professor ? escaparHtml(a.professor) : '<span class="aviso-sem-professor">Sem professor</span>'}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="5" class="vazio">Nenhuma aula encontrada para este filtro.</td></tr>';
-}
-
-$('#filtro-turma-grade-geral').addEventListener('change', renderizarGradeGeral);
-$('#filtro-dia-grade-geral').addEventListener('change', renderizarGradeGeral);
-
 function renderizarLinhas(lista, campos, opcoes = {}) {
   if (!lista.length) return '<p class="vazio">Nenhum registro cadastrado.</p>';
 
@@ -114,11 +84,14 @@ function renderizarLinhas(lista, campos, opcoes = {}) {
     if (opcoes.recurso) {
       const id = escaparHtml(item[opcoes.chave]);
       const editar = `<button type="button" class="btn-editar" data-editar="${opcoes.recurso}" data-id="${id}">Editar</button>`;
+      const senha = opcoes.temSenha
+        ? `<button type="button" class="btn-editar" data-redefinir-senha="${opcoes.recurso}" data-id="${id}" data-nome="${escaparHtml(item.nome)}">Redefinir senha</button>`
+        : '';
       if (ativo) {
-        acoes = `${editar}<button type="button" class="btn-desativar" data-desativar="${opcoes.recurso}" data-id="${id}">Desativar</button>`;
+        acoes = `${editar}${senha}<button type="button" class="btn-desativar" data-desativar="${opcoes.recurso}" data-id="${id}">Desativar</button>`;
       } else {
         acoes = `
-          ${editar}
+          ${editar}${senha}
           <button type="button" class="btn-reativar" data-reativar="${opcoes.recurso}" data-id="${id}">Reativar</button>
           <button type="button" class="btn-excluir-definitivo" data-excluir-definitivo="${opcoes.recurso}" data-id="${id}">Excluir definitivamente</button>
         `;
@@ -134,6 +107,7 @@ const NOME_RECURSO = {
   professores: 'professor',
   coordenadores: 'coordenador(a)',
   porteiros: 'porteiro(a)',
+  materias: 'disciplina',
 };
 
 async function desativarRegistro(botao) {
@@ -197,30 +171,6 @@ async function excluirDefinitivamente(botao) {
   }
 }
 
-async function resetarSenhaResponsavel(botao) {
-  const id = botao.dataset.resetarSenha;
-  const nome = botao.dataset.nome;
-  const senhaNova = (prompt(`Nova senha para ${nome} (mínimo 6 caracteres):\nCombine com o responsável antes de informar.`) || '').trim();
-  if (!senhaNova) return;
-  if (senhaNova.length < 6) { msg('A nova senha deve possuir pelo menos 6 caracteres.', true); return; }
-  if (!confirm(`Confirma a redefinição da senha de ${nome}? A senha atual dele(a) deixará de funcionar imediatamente.`)) return;
-
-  botao.disabled = true;
-  const textoOriginal = botao.textContent;
-  botao.textContent = 'Redefinindo...';
-  try {
-    const resultado = await chamarApi(`/admin/responsaveis/${encodeURIComponent(id)}/senha`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha_nova: senhaNova })
-    });
-    msg(resultado.mensagem);
-  } catch (erro) {
-    msg(erro.message, true);
-  } finally {
-    botao.disabled = false;
-    botao.textContent = textoOriginal;
-  }
-}
-
 document.addEventListener('click', e => {
   const editarTurma = e.target.closest('[data-editar-turma]');
   if (editarTurma) return abrirEdicaoTurma(editarTurma.dataset.editarTurma);
@@ -243,10 +193,10 @@ document.addEventListener('click', e => {
 
   const excluir = e.target.closest('[data-excluir-definitivo]');
   if (excluir) return excluirDefinitivamente(excluir);
-  const resetarSenha = e.target.closest('[data-resetar-senha]');
-  if (resetarSenha) return resetarSenhaResponsavel(resetarSenha);
   const decisaoAdmin = e.target.closest('[data-decisao-admin]');
   if (decisaoAdmin) return decidirOcorrenciaAdmin(decisaoAdmin.dataset.idOcorrencia, decisaoAdmin.dataset.decisaoAdmin);
+  const redefinirSenha = e.target.closest('[data-redefinir-senha]');
+  if (redefinirSenha) return abrirRedefinirSenha(redefinirSenha.dataset.redefinirSenha, redefinirSenha.dataset.id, redefinirSenha.dataset.nome);
   const anexoAdmin = e.target.closest('[data-anexo-admin]');
   if (anexoAdmin) return abrirAnexoAdmin(anexoAdmin.dataset.anexoAdmin);
 });
@@ -260,22 +210,21 @@ async function carregar() {
   $('#saudacao').textContent = `Bem-vindo, ${(usuario.pessoa && usuario.pessoa.nome) || 'Administrador'}`;
 
   const resumo = await chamarApi('/admin/resumo');
-  ['alunos', 'professores', 'coordenadores', 'porteiros', 'turmas', 'materias'].forEach(chave => {
+  ['alunos', 'professores', 'coordenadores', 'porteiros', 'turmas'].forEach(chave => {
     $(`#n-${chave}`).textContent = resumo[chave];
   });
 
-  const [turmas, alunos, professores, coordenadores, porteiros, materias, responsaveis, gradeGeral] = await Promise.all([
+  const [turmas, alunos, professores, coordenadores, porteiros, materias, responsaveis] = await Promise.all([
     chamarApi('/admin/turmas'),
     chamarApi('/admin/alunos?incluir_inativos=1'),
     chamarApi('/admin/professores?incluir_inativos=1'),
     chamarApi('/admin/coordenadores?incluir_inativos=1'),
     chamarApi('/admin/porteiros?incluir_inativos=1'),
-    chamarApi('/admin/materias'),
+    chamarApi('/admin/materias?incluir_inativos=1'),
     chamarApi('/admin/responsaveis?incluir_inativos=1'),
-    chamarApi('/admin/grade-geral'),
   ]);
 
-  cacheAdmin = { turmas, alunos, professores, coordenadores, porteiros, responsaveis, materias, gradeGeral };
+  cacheAdmin = { turmas, alunos, professores, coordenadores, porteiros, responsaveis, materias };
 
   $('#lista-turmas').innerHTML = turmas.length ? turmas.map(t => `
     <div class="linha linha-turma">
@@ -293,33 +242,32 @@ async function carregar() {
     turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
   selectFiltroTurma.value = turmaSelecionada;
 
-  const selectFiltroTurmaGrade = $('#filtro-turma-grade-geral');
-  const turmaGradeSelecionada = selectFiltroTurmaGrade.value;
-  selectFiltroTurmaGrade.innerHTML = '<option value="">Todas as turmas</option>' +
-    turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
-  selectFiltroTurmaGrade.value = turmaGradeSelecionada;
-  renderizarGradeGeral();
-
-  renderizarMaterias();
-
   renderizarAlunos();
   $('#lista-professores').innerHTML = renderizarLinhas(
     professores,
     ['matricula', 'nome', 'materias', 'email', 'telefone'],
-    { recurso: 'professores', chave: 'matricula', temStatus: true }
+    { recurso: 'professores', chave: 'matricula', temStatus: true, temSenha: true }
   );
   $('#lista-coordenadores').innerHTML = renderizarLinhas(
     coordenadores,
     ['id', 'nome', 'email', 'telefone'],
-    { recurso: 'coordenadores', chave: 'id', temStatus: true }
+    { recurso: 'coordenadores', chave: 'id', temStatus: true, temSenha: true }
   );
   $('#lista-porteiros').innerHTML = renderizarLinhas(
     porteiros,
     ['id', 'nome', 'email', 'telefone'],
-    { recurso: 'porteiros', chave: 'id', temStatus: true }
+    { recurso: 'porteiros', chave: 'id', temStatus: true, temSenha: true }
   );
   $('#lista-responsaveis').innerHTML = responsaveis.length ? responsaveis.map(r => `
-    <div class="linha ${ativoComoBooleano(r.ativo) ? '' : 'linha-inativa'}"><span><strong>${escaparHtml(r.nome)}</strong></span><span>${escaparHtml(r.email)}</span><span>CPF: ${escaparHtml(r.cpf)}</span><span>Aluno(s): ${escaparHtml(r.alunos || 'Nenhum vínculo')}</span><span class="status-registro ${ativoComoBooleano(r.ativo) ? 'status-ativo' : 'status-inativo'}">${ativoComoBooleano(r.ativo) ? 'Ativo' : 'Inativo'}</span><div class="acoes-registro">${ativoComoBooleano(r.ativo) ? `<button type="button" class="btn-resetar-senha" data-resetar-senha="${r.id_responsavel}" data-nome="${escaparHtml(r.nome)}">Resetar senha</button>` : ''}</div></div>`).join('') : '<p class="vazio">Nenhum responsável cadastrado.</p>';
+    <div class="linha ${ativoComoBooleano(r.ativo) ? '' : 'linha-inativa'}"><span><strong>${escaparHtml(r.nome)}</strong></span><span>${escaparHtml(r.email)}</span><span>CPF: ${escaparHtml(r.cpf)}</span><span>Aluno(s): ${escaparHtml(r.alunos || 'Nenhum vínculo')}</span><span class="status-registro ${ativoComoBooleano(r.ativo) ? 'status-ativo' : 'status-inativo'}">${ativoComoBooleano(r.ativo) ? 'Ativo' : 'Inativo'}</span><div class="acoes-registro"><button type="button" class="btn-editar" data-redefinir-senha="responsaveis" data-id="${r.id_responsavel}" data-nome="${escaparHtml(r.nome)}">Redefinir senha</button></div></div>`).join('') : '<p class="vazio">Nenhum responsável cadastrado.</p>';
+
+  $('#lista-materias').innerHTML = materias.length ? materias.map(m => {
+    const ativa = ativoComoBooleano(m.ativo);
+    const acao = ativa
+      ? `<button type="button" class="btn-desativar" data-desativar="materias" data-id="${m.id_materia}">Desativar</button>`
+      : `<button type="button" class="btn-reativar" data-reativar="materias" data-id="${m.id_materia}">Reativar</button>`;
+    return `<div class="linha ${ativa ? '' : 'linha-inativa'}"><span><strong>${escaparHtml(m.nome)}</strong></span><span class="status-registro ${ativa ? 'status-ativo' : 'status-inativo'}">${ativa ? 'Ativa' : 'Inativa'}</span><div class="acoes-registro"><button type="button" class="btn-editar" data-editar="materias" data-id="${m.id_materia}">Editar</button>${acao}</div></div>`;
+  }).join('') : '<p class="vazio">Nenhuma disciplina cadastrada.</p>';
 
   await carregarControleAdmin();
 
@@ -328,15 +276,76 @@ async function carregar() {
     turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
 
   const selectMateria = document.querySelector('#form-professor select[name="id_materias"]');
-  selectMateria.innerHTML = materias.map(m => `<option value="${m.id_materia}">${escaparHtml(m.nome)}</option>`).join('');
+  const materiasAtivas = materias.filter(m => ativoComoBooleano(m.ativo));
+  selectMateria.innerHTML = materiasAtivas.map(m => `<option value="${m.id_materia}">${escaparHtml(m.nome)}</option>`).join('');
+
+  const selectTurmaGrade = $('#filtro-turma-grade-unificada');
+  if (selectTurmaGrade) {
+    const turmaGradeSelecionada = selectTurmaGrade.value;
+    selectTurmaGrade.innerHTML = '<option value="">Todas as turmas</option>' +
+      turmas.map(t => `<option value="${escaparHtml(t.codigo)}">${escaparHtml(t.codigo)}</option>`).join('');
+    selectTurmaGrade.value = turmaGradeSelecionada;
+  }
 }
+
+let gradeUnificada = null;
 
 $$('.tabs button').forEach(botao => {
   botao.addEventListener('click', () => {
     $$('.tabs button, .painel').forEach(el => el.classList.remove('ativo'));
     botao.classList.add('ativo');
     document.getElementById(botao.dataset.tab).classList.add('ativo');
+    if (botao.dataset.tab === 'horarios' && gradeUnificada === null) carregarGradeUnificada();
   });
+});
+
+const DIA_ROTULO = { Segunda: 'Segunda-feira', Terca: 'Terça-feira', Quarta: 'Quarta-feira', Quinta: 'Quinta-feira', Sexta: 'Sexta-feira', Sabado: 'Sábado', Domingo: 'Domingo' };
+
+function renderGradeUnificada() {
+  const termo = normalizarTexto($('#busca-grade-unificada').value.trim());
+  const turma = $('#filtro-turma-grade-unificada').value;
+  const dia = $('#filtro-dia-grade-unificada').value;
+  const lista = (gradeUnificada || []).filter(h => {
+    const okVigente = !h.data_fim_vigencia; // só a grade em vigor hoje, ignora vigências já encerradas
+    const okTurma = !turma || h.turma === turma;
+    const okDia = !dia || h.dia_da_semana === dia;
+    const okBusca = !termo || normalizarTexto(`${h.turma} ${h.materia} ${h.professor_nome || ''}`).includes(termo);
+    return okVigente && okTurma && okDia && okBusca;
+  });
+  if (!lista.length) {
+    $('#tabela-grade-unificada').innerHTML = '<p class="vazio">Nenhum horário encontrado.</p>';
+    return;
+  }
+  const linhas = lista.map(h => `<div class="linha linha-grade-unificada">
+    <span><strong>${escaparHtml(h.turma)}</strong></span>
+    <span>${escaparHtml(DIA_ROTULO[h.dia_da_semana] || h.dia_da_semana)}</span>
+    <span>${escaparHtml(String(h.hr_inicio || '').slice(0, 5))} às ${escaparHtml(String(h.hr_final || '').slice(0, 5))}</span>
+    <span>${escaparHtml(h.materia)}</span>
+    <span>${escaparHtml(h.professor_nome || 'Sem professor')}</span>
+  </div>`).join('');
+  $('#tabela-grade-unificada').innerHTML = `<div class="linha linha-grade-unificada linha-cabecalho">
+    <span>Turma</span><span>Dia</span><span>Horário</span><span>Disciplina</span><span>Professor</span>
+  </div>${linhas}`;
+}
+
+async function carregarGradeUnificada() {
+  try {
+    // GET /api/horarios sem filtro de turma já retorna a grade de TODAS as
+    // turmas (routes/horarios.py) — não foi preciso criar rota nova no backend.
+    gradeUnificada = await chamarApi('/horarios');
+    renderGradeUnificada();
+  } catch (erro) {
+    msg(erro.message, true);
+  }
+}
+
+$('#busca-grade-unificada').addEventListener('input', renderGradeUnificada);
+$('#filtro-turma-grade-unificada').addEventListener('change', renderGradeUnificada);
+$('#filtro-dia-grade-unificada').addEventListener('change', renderGradeUnificada);
+$('#atualizar-horarios').addEventListener('click', carregarGradeUnificada);
+// Atualização automática (Prioridade 1) só quando a aba de Horários está visível.
+iniciarAtualizacaoAutomatica(carregarGradeUnificada, {
+  podeAtualizar: () => gradeUnificada !== null && document.getElementById('horarios').classList.contains('ativo')
 });
 
 async function abrirAnexoAdmin(nomeArquivo) {
@@ -371,6 +380,12 @@ function configurarTelefone() {
 async function enviarJson(form, caminho) {
   const botao = form.querySelector('button[type="submit"], button:not([type])');
   const textoOriginal = botao ? botao.textContent : '';
+  const campoNome = form.querySelector('[name="nome"]');
+  if (campoNome && !nomeValido(campoNome.value)) {
+    msg('Informe um nome válido, com nome e sobrenome (só letras, espaço, hífen ou apóstrofo).', true);
+    campoNome.focus();
+    return;
+  }
   try {
     if (botao) {
       botao.disabled = true;
@@ -419,99 +434,31 @@ async function enviarTurma(form) {
   }
 }
 
-async function enviarImportacaoAlunos(form) {
-  const botao = form.querySelector('button');
-  const textoOriginal = botao.textContent;
-  const areaResultado = $('#resultado-importacao-alunos');
-  areaResultado.innerHTML = '';
-  try {
-    botao.disabled = true;
-    botao.textContent = 'Importando...';
-    const resultado = await chamarApi('/admin/alunos/importar', {
-      method: 'POST',
-      body: new FormData(form)
-    });
-    msg(resultado.mensagem);
-
-    if (resultado.ignorados) {
-      const linhasIgnoradas = (resultado.detalhes_ignorados || [])
-        .map(item => `<li>Linha ${item.linha}: ${escaparHtml(item.motivo)}</li>`).join('');
-      areaResultado.innerHTML = `
-        <div class="aviso-importacao">
-          <p>${resultado.ignorados} linha(s) não foram importadas:</p>
-          <ul>${linhasIgnoradas}</ul>
-        </div>`;
-    }
-
-    form.reset();
-    await carregar();
-  } catch (erro) {
-    msg(erro.message, true);
-  } finally {
-    botao.disabled = false;
-    botao.textContent = textoOriginal;
-  }
-}
-
 $('#form-turma').addEventListener('submit', e => { e.preventDefault(); enviarTurma(e.target); });
 $('#form-aluno').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/alunos'); });
-$('#form-importar-alunos').addEventListener('submit', e => { e.preventDefault(); enviarImportacaoAlunos(e.target); });
-
-async function enviarImportacaoCompleta(form) {
-  const botao = form.querySelector('button');
-  const textoOriginal = botao.textContent;
-  const areaResultado = $('#resultado-importacao-completa');
-  areaResultado.innerHTML = '';
-  try {
-    botao.disabled = true;
-    botao.textContent = 'Importando...';
-    const resultado = await chamarApi('/admin/importar-completo', {
-      method: 'POST',
-      body: new FormData(form)
-    });
-    msg(resultado.mensagem);
-
-    let html = '';
-    if (resultado.turmas_criadas && resultado.turmas_criadas.length) {
-      html += `<div class="aviso-importacao aviso-sucesso">
-        <p>Turma(s) criada(s) automaticamente: ${resultado.turmas_criadas.map(escaparHtml).join(', ')}.</p>
-        <p>Não esqueça de importar a grade de horários delas na aba Turmas.</p>
-      </div>`;
-    }
-    if (resultado.credenciais_criadas && resultado.credenciais_criadas.length) {
-      const linhasCredenciais = resultado.credenciais_criadas
-        .map(c => `<li><b>${escaparHtml(c.responsavel)}</b> — ${escaparHtml(c.email)} — senha provisória: <code>${escaparHtml(c.senha_provisoria)}</code></li>`)
-        .join('');
-      html += `<div class="aviso-importacao aviso-sucesso">
-        <p>${resultado.importados_responsaveis} responsável(is) novo(s). Repasse as credenciais abaixo e oriente a troca de senha no primeiro acesso:</p>
-        <ul>${linhasCredenciais}</ul>
-      </div>`;
-    }
-    if (resultado.ignorados) {
-      const linhasIgnoradas = (resultado.detalhes_ignorados || [])
-        .map(item => `<li>Linha ${item.linha}: ${escaparHtml(item.motivo)}</li>`).join('');
-      html += `<div class="aviso-importacao">
-        <p>${resultado.ignorados} linha(s) não foram importadas:</p>
-        <ul>${linhasIgnoradas}</ul>
-      </div>`;
-    }
-    areaResultado.innerHTML = html;
-
-    form.reset();
-    await carregar();
-  } catch (erro) {
-    msg(erro.message, true);
-  } finally {
-    botao.disabled = false;
-    botao.textContent = textoOriginal;
-  }
-}
-$('#form-importacao-completa').addEventListener('submit', e => { e.preventDefault(); enviarImportacaoCompleta(e.target); });
-
 $('#form-professor').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/professores'); });
 $('#form-coordenador').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/coordenadores'); });
 $('#form-porteiro').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/porteiros'); });
 $('#form-responsavel').addEventListener('submit', e => { e.preventDefault(); enviarJson(e.target, '/admin/responsaveis'); });
+$('#form-materia').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target;
+  const botao = form.querySelector('button');
+  const original = botao.textContent;
+  try {
+    botao.disabled = true; botao.textContent = 'Cadastrando...';
+    const resultado = await chamarApi('/admin/materias', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosDoFormulario(form))
+    });
+    form.reset();
+    msg(resultado.mensagem);
+    await carregar();
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false; botao.textContent = original;
+  }
+});
 
 function fecharEdicao() {
   $('#modal-edicao').hidden = true;
@@ -523,7 +470,7 @@ function inputEdicao(nome, valor, tipo = 'text', extra = '', obrigatorio = true)
 }
 
 function abrirEdicao(tipo, id) {
-  const chave = (tipo === 'alunos' || tipo === 'professores') ? 'matricula' : 'id';
+  const chave = (tipo === 'alunos' || tipo === 'professores') ? 'matricula' : tipo === 'materias' ? 'id_materia' : 'id';
   const lista = cacheAdmin[tipo] || [];
   const item = lista.find(x => String(x[chave]) === String(id));
   if (!item) return msg('Não foi possível localizar o cadastro para edição.', true);
@@ -533,21 +480,25 @@ function abrirEdicao(tipo, id) {
   form.dataset.idOriginal = id;
   let campos = '';
 
-  if (tipo === 'alunos') {
+  if (tipo === 'materias') {
+    $('#titulo-edicao').textContent = 'Editar disciplina';
+    campos = `<input name="nome" value="${escaparHtml(item.nome)}" maxlength="100" placeholder="Nome da disciplina" required>`;
+  } else if (tipo === 'alunos') {
     $('#titulo-edicao').textContent = 'Editar aluno';
     const opcoesTurma = cacheAdmin.turmas.map(t => `<option value="${escaparHtml(t.codigo)}" ${t.codigo === item.turma ? 'selected' : ''}>${escaparHtml(t.codigo)}</option>`).join('');
     const responsaveisAtivos = (cacheAdmin.responsaveis || []).filter(r => r.ativo);
     const opcoesResponsavel = '<option value="">Nenhum (desvincular)</option>' +
       responsaveisAtivos.map(r => `<option value="${r.id_responsavel}" ${String(r.id_responsavel) === String(item.id_responsavel) ? 'selected' : ''}>${escaparHtml(r.nome)} — ${escaparHtml(r.cpf || '')}</option>`).join('');
-    campos = `${inputEdicao('matricula', item.matricula, 'text', 'inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}"')}${inputEdicao('nome', item.nome)}<select name="turma" required>${opcoesTurma}</select><label class="campo-largo">Responsável<select name="id_responsavel">${opcoesResponsavel}</select></label><p class="ajuda-form campo-largo">Use isto para corrigir um vínculo feito errado pelo responsável no cadastro.</p>`;
+    campos = `${inputEdicao('matricula', item.matricula, 'text', 'inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}"')}${inputEdicao('nome', item.nome, 'text', 'maxlength="150"')}<select name="turma" required>${opcoesTurma}</select><label class="campo-largo">Responsável<select name="id_responsavel">${opcoesResponsavel}</select></label><p class="ajuda-form campo-largo">Use isto para corrigir um vínculo feito errado pelo responsável no cadastro.</p>`;
   } else if (tipo === 'professores') {
     $('#titulo-edicao').textContent = 'Editar professor';
     const materiasAtuais = idsMateriasProfessor(item);
-    const opcoesMateria = cacheAdmin.materias.map(m => `<option value="${m.id_materia}" ${materiasAtuais.includes(String(m.id_materia)) ? 'selected' : ''}>${escaparHtml(m.nome)}</option>`).join('');
-    campos = `${inputEdicao('nome', item.nome)}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}<label class="campo-largo">Matérias<select name="id_materias" multiple size="5" required>${opcoesMateria}</select></label><p class="ajuda-form campo-largo">Segure Ctrl (ou Cmd no Mac) para selecionar mais de uma matéria.</p>`;
+    const materiasParaSelecionar = cacheAdmin.materias.filter(m => ativoComoBooleano(m.ativo) || materiasAtuais.includes(String(m.id_materia)));
+    const opcoesMateria = materiasParaSelecionar.map(m => `<option value="${m.id_materia}" ${materiasAtuais.includes(String(m.id_materia)) ? 'selected' : ''}>${escaparHtml(m.nome)}${ativoComoBooleano(m.ativo) ? '' : ' (inativa)'}</option>`).join('');
+    campos = `${inputEdicao('nome', item.nome, 'text', 'maxlength="150"')}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}<label class="campo-largo">Matérias<select name="id_materias" multiple size="5" required>${opcoesMateria}</select></label><p class="ajuda-form campo-largo">Segure Ctrl (ou Cmd no Mac) para selecionar mais de uma matéria.</p>`;
   } else {
     $('#titulo-edicao').textContent = tipo === 'coordenadores' ? 'Editar coordenador(a)' : 'Editar porteiro(a)';
-    campos = `${inputEdicao('nome', item.nome)}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}`;
+    campos = `${inputEdicao('nome', item.nome, 'text', 'maxlength="150"')}${inputEdicao('email', item.email, 'email')}${inputEdicao('telefone', item.telefone || '', 'tel', 'inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}"', false)}`;
   }
 
   form.innerHTML = `${campos}<div class="acoes-modal"><button type="button" class="btn-cancelar">Cancelar</button><button type="submit">Salvar alterações</button></div>`;
@@ -565,6 +516,12 @@ $('#form-edicao').addEventListener('submit', async e => {
   const id = form.dataset.idOriginal;
   const botao = form.querySelector('button[type="submit"]');
   const original = botao.textContent;
+  const campoNome = form.querySelector('[name="nome"]');
+  if (tipo !== 'materias' && campoNome && !nomeValido(campoNome.value)) {
+    msg('Informe um nome válido, com nome e sobrenome (só letras, espaço, hífen ou apóstrofo).', true);
+    campoNome.focus();
+    return;
+  }
   try {
     botao.disabled = true; botao.textContent = 'Salvando...';
     const caminho = tipo === 'turma' ? `/admin/turmas/${encodeURIComponent(id)}` : `/admin/${tipo}/${encodeURIComponent(id)}`;
@@ -575,6 +532,153 @@ $('#form-edicao').addEventListener('submit', async e => {
   } catch (erro) { msg(erro.message, true); botao.disabled = false; botao.textContent = original; }
 });
 
+
+let redefinirSenhaTipo = null;
+let redefinirSenhaId = null;
+
+// Senha padrão sugerida pelo botão "Usar senha padrão" na redefinição de
+// senha (Admin → Professores/Coordenadores/Porteiros/Responsáveis). É só um
+// atalho de preenchimento — o administrador ainda pode digitar outra senha
+// antes de salvar, e o valor final enviado é sempre o que estiver nos
+// campos do formulário. Centralizado aqui em vez de repetido em cada tela.
+const SENHA_PADRAO_RESET = 'Integra@123';
+
+function abrirRedefinirSenha(tipo, id, nome) {
+  redefinirSenhaTipo = tipo;
+  redefinirSenhaId = id;
+  $('#titulo-senha-responsavel').textContent = `Redefinir senha — ${nome}`;
+  $('#form-senha-responsavel').reset();
+  $('#modal-senha-responsavel').hidden = false;
+}
+
+function fecharRedefinirSenha() {
+  $('#modal-senha-responsavel').hidden = true;
+  redefinirSenhaTipo = null;
+  redefinirSenhaId = null;
+}
+
+$('#usar-senha-padrao').addEventListener('click', () => {
+  $('#campo-senha-nova-responsavel').value = SENHA_PADRAO_RESET;
+  $('#campo-senha-confirmacao-responsavel').value = SENHA_PADRAO_RESET;
+});
+
+$('#fechar-senha-responsavel').addEventListener('click', fecharRedefinirSenha);
+$('#cancelar-senha-responsavel').addEventListener('click', fecharRedefinirSenha);
+$('#modal-senha-responsavel').addEventListener('click', e => { if (e.target.id === 'modal-senha-responsavel') fecharRedefinirSenha(); });
+$('#form-senha-responsavel').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const botao = form.querySelector('button[type="submit"]');
+  const original = botao.textContent;
+  const dados = dadosDoFormulario(form);
+  if (dados.senha_nova !== dados.senha_confirmacao) {
+    msg('As senhas não coincidem.', true);
+    return;
+  }
+  if (!confirm(`Tem certeza que deseja redefinir a senha deste usuário? Ele(a) não vai mais conseguir entrar com a senha antiga.`)) {
+    return;
+  }
+  try {
+    botao.disabled = true; botao.textContent = 'Salvando...';
+    // Rota genérica: funciona pra professores, coordenadores, porteiros e
+    // responsáveis — reaproveita o mesmo mecanismo de hash em todos os casos.
+    const resultado = await chamarApi(`/admin/usuarios/${encodeURIComponent(redefinirSenhaTipo)}/${encodeURIComponent(redefinirSenhaId)}/senha`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados)
+    });
+    fecharRedefinirSenha();
+    msg(resultado.mensagem);
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false; botao.textContent = original;
+  }
+});
+
+let importarTipo = null;
+
+function abrirImportar(tipo) {
+  importarTipo = tipo;
+  const rotulos = { disciplinas: 'disciplinas', professores: 'professores', alunos: 'alunos' };
+  $('#titulo-importar').textContent = `Importar ${rotulos[tipo] || tipo}`;
+  $('#form-importar-arquivo').reset();
+  $('#form-importar-arquivo').hidden = false;
+  $('#resumo-importar').hidden = true;
+  $('#importar-lista-erros').hidden = true;
+  $('#modal-importar').hidden = false;
+}
+
+function fecharImportar() {
+  $('#modal-importar').hidden = true;
+  importarTipo = null;
+}
+
+$('#fechar-importar').addEventListener('click', fecharImportar);
+$('#cancelar-importar').addEventListener('click', fecharImportar);
+$('#cancelar-importar-2').addEventListener('click', fecharImportar);
+$('#modal-importar').addEventListener('click', e => { if (e.target.id === 'modal-importar') fecharImportar(); });
+
+document.addEventListener('click', e => {
+  const abrir = e.target.closest('[data-abrir-importar]');
+  if (abrir) abrirImportar(abrir.dataset.abrirImportar);
+});
+
+function montarFormDataImportacao() {
+  const dados = new FormData($('#form-importar-arquivo'));
+  dados.set('tipo', importarTipo);
+  return dados;
+}
+
+function renderErrosImportar(erros) {
+  $('#importar-lista-erros').innerHTML = erros.length
+    ? erros.map(e => `<p>${e.tipo === 'duplicado' ? '<i class="fa-solid fa-copy"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>'} Linha ${e.linha}: ${escaparHtml(e.motivo)}</p>`).join('')
+    : '<p>Nenhuma linha com problema.</p>';
+}
+
+$('#form-importar-arquivo').addEventListener('submit', async e => {
+  e.preventDefault();
+  const botao = e.target.querySelector('button[type="submit"]');
+  const original = botao.textContent;
+  try {
+    botao.disabled = true; botao.textContent = 'Analisando...';
+    const resultado = await chamarApi('/admin/importar/preview', { method: 'POST', body: montarFormDataImportacao() });
+    $('#importar-encontrados').textContent = resultado.encontrados;
+    $('#importar-validos').textContent = resultado.validos;
+    $('#importar-ja-cadastrados').textContent = resultado.ja_cadastrados;
+    $('#importar-invalidos').textContent = resultado.invalidos;
+    renderErrosImportar(resultado.erros);
+    $('#ver-erros-importar').hidden = (resultado.invalidos + resultado.ja_cadastrados) === 0;
+    $('#importar-lista-erros').hidden = true;
+    $('#confirmar-importar').hidden = resultado.validos === 0;
+    $('#confirmar-importar').disabled = resultado.validos === 0;
+    $('#form-importar-arquivo').hidden = true;
+    $('#resumo-importar').hidden = false;
+  } catch (erro) {
+    msg(erro.message, true);
+  } finally {
+    botao.disabled = false; botao.textContent = original;
+  }
+});
+
+$('#ver-erros-importar').addEventListener('click', () => {
+  $('#importar-lista-erros').hidden = !$('#importar-lista-erros').hidden;
+});
+
+$('#confirmar-importar').addEventListener('click', async () => {
+  const botao = $('#confirmar-importar');
+  const original = botao.textContent;
+  try {
+    botao.disabled = true; botao.textContent = 'Importando...';
+    // Reenvia e revalida o mesmo arquivo no servidor (nunca confia só na
+    // prévia já mostrada) — só grava as linhas que continuarem válidas.
+    const resultado = await chamarApi('/admin/importar/confirmar', { method: 'POST', body: montarFormDataImportacao() });
+    fecharImportar();
+    msg(resultado.mensagem);
+    await carregar();
+  } catch (erro) {
+    msg(erro.message, true);
+    botao.disabled = false; botao.textContent = original;
+  }
+});
 
 function abrirEdicaoTurma(codigo) {
   const form = $('#form-edicao');
@@ -720,3 +824,15 @@ $('#logout').addEventListener('click', sair);
 
 configurarTelefone();
 carregar().catch(erro => msg(erro.message, true));
+
+// Atualização automática (Prioridade 1): só a aba de Atestados/Liberações,
+// que é a que muda com mais frequência por ação de outros perfis. As demais
+// abas (cadastros) não são recarregadas sozinhas para não atrapalhar quem
+// está preenchendo um formulário ou com o modal de edição aberto.
+function algumModalAdminAberto() {
+  return !$('#modal-edicao').hidden || !$('#modal-grade').hidden || !$('#modal-nova-grade').hidden
+    || !$('#modal-senha-responsavel').hidden || !$('#modal-importar').hidden;
+}
+iniciarAtualizacaoAutomatica(carregarControleAdmin, {
+  podeAtualizar: () => !algumModalAdminAberto()
+});

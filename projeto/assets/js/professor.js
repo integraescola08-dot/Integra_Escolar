@@ -169,6 +169,13 @@ carregarDados().catch(erro => {
   document.getElementById('listaAlunos').innerHTML = '<p class="vazio">Não foi possível carregar os dados.</p>';
 });
 
+// Atualização automática (Prioridade 1): reaproveita carregarDados(), que já
+// remonta filtros e a lista preservando o que está selecionado. Pausa
+// enquanto o popup de confirmação está aberto.
+iniciarAtualizacaoAutomatica(carregarDados, {
+  podeAtualizar: () => !document.getElementById('popup').classList.contains('show')
+});
+
 // Funções exclusivas do Modal de Sair do Professor
 function abrirConfirmarSair() {
   document.getElementById('modalConfirmarSair').classList.add('show');

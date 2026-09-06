@@ -7,6 +7,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   atualizarContadores();
 });
 
+// Algum modal de decisão aberto? Evita que a atualização automática/manual
+// substitua a lista embaixo do modal enquanto a gestão está analisando um item.
+function algumModalGestaoAberto() {
+  return document.getElementById('modal').classList.contains('show')
+    || document.getElementById('modalLiberacao').classList.contains('show');
+}
+
+// Reaproveita os mesmos carregadores usados no carregamento inicial e no
+// botão manual — mantém filtros, pesquisa e posição da tela, sem recarregar
+// a página (nunca usar location.reload aqui).
+async function atualizarPainelGestao() {
+  if (algumModalGestaoAberto()) return;
+  await carregarPainelGestao();
+  atualizarContadores();
+  filtrarCards();
+}
+
+document.getElementById('btn-atualizar')?.addEventListener('click', atualizarPainelGestao);
+
+// Atualização automática: consulta a API a cada 10s e só troca a área de
+// dados (a mesma função de sempre); preserva pesquisa/filtros/scroll.
+iniciarAtualizacaoAutomatica(atualizarPainelGestao);
+
 function trocar(id, botao) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   botao.classList.add('active');
@@ -105,6 +128,15 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
         <i class="fa-solid fa-user-check"></i>
         <span>${status === 'aprovado' ? 'Aprovado' : 'Rejeitado'} por <strong>${escapeHtml(o.aprovador_nome || 'Usuário')}</strong> — ${escapeHtml(o.aprovador_perfil || 'Usuário')} <small>(ID ${escapeHtml(o.aprovador_id)})</small></span>
       </div>` : '';
+    // "Desfazer" só aparece no histórico (já decidido). Para liberação já
+    // confirmada na portaria, o backend bloqueia o desfazer — mostramos um
+    // aviso em vez de um botão que sempre daria erro.
+    let desfazer = '';
+    if (status !== 'pendente') {
+      desfazer = (tipo === 'liberacao' && o.saida_confirmada)
+        ? '<div class="aviso-saida-confirmada"><i class="fa-solid fa-circle-info"></i> O aluno já saiu com base nesta liberação — não é possível desfazer.</div>'
+        : `<button class="btn-desfazer" onclick="desfazerDecisao('${id}')"><i class="fa-solid fa-rotate-left"></i> Desfazer</button>`;
+    }
 
     const div = document.createElement('div');
     div.className = `item ${status !== 'pendente' ? 'historico' : ''}`;
@@ -113,6 +145,8 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
     div.dataset.turma = o.aluno_turma || '';
     div.dataset.status = status;
     div.dataset.nome = o.aluno_nome || '';
+    // Data de referência do card, no formato AAAA-MM-DD, para o filtro de data.
+    div.dataset.data = String(o.data_inicio_oc || o.data_da_criacao || '').slice(0, 10);
     div.innerHTML = `
       <div class="item-topo">
         <div class="aluno">
@@ -129,7 +163,8 @@ function renderLista(idPendentes, idHistorico, itens, tipo) {
       <div class="obs">"${escapeHtml(o.descricao || '')}"</div>
       ${quemBusca}
       ${decisaoPor}
-      ${botao}`;
+      ${botao}
+      ${desfazer}`;
     (status === 'pendente' ? pendentes : historico).appendChild(div);
   });
 }
@@ -194,6 +229,19 @@ async function enviarDecisao(idItem, modalId, textareaId) {
 async function confirmarDecisaoAtestado() { await enviarDecisao(itemAtualAtestado, 'modal', 'respostaAtestado'); fecharModal(); }
 async function confirmarDecisaoLiberacao() { await enviarDecisao(itemAtualLiberacao, 'modalLiberacao', 'respostaLiberacao'); fecharModalLiberacao(); }
 
+async function desfazerDecisao(idItem) {
+  const item = document.getElementById(idItem);
+  if (!confirm('Desfazer esta decisão? A solicitação volta para a fila de pendentes.')) return;
+  try {
+    const r = await apiFetch(`${API_URL}/ocorrencias/${item.dataset.idOcorrencia}/desfazer`, { method: 'PUT' });
+    const json = await respostaJsonSegura(r);
+    await atualizarPainelGestao();
+    alert(json.mensagem);
+  } catch (erro) {
+    alert(erro.message || 'Não foi possível desfazer a decisão.');
+  }
+}
+
 function atualizarContadores() {
   const pendAtestados = document.querySelectorAll('#lista-atestados .item[data-status="pendente"]').length;
   const pendLiberacoes = document.querySelectorAll('#lista-liberacoes .item[data-status="pendente"]').length;
@@ -209,11 +257,13 @@ function filtrarCards() {
   const pesquisa = document.getElementById('pesquisa').value.toLowerCase().trim();
   const turma = document.getElementById('turma').value;
   const status = document.getElementById('status').value;
+  const data = document.getElementById('dataFiltro').value; // 'AAAA-MM-DD' ou ''
   document.querySelectorAll('.item').forEach(item => {
     const okNome = !pesquisa || (item.dataset.nome || '').toLowerCase().includes(pesquisa);
     const okTurma = !turma || item.dataset.turma === turma;
     const okStatus = status === 'todos' || item.dataset.status === status;
-    item.style.display = (okNome && okTurma && okStatus) ? 'block' : 'none';
+    const okData = !data || item.dataset.data === data;
+    item.style.display = (okNome && okTurma && okStatus && okData) ? 'block' : 'none';
   });
 }
 function sair() { window.location.href = '../../index.html'; }
@@ -250,5 +300,3 @@ function fecharConfirmarSair() {
 document.getElementById('modalConfirmarSair').addEventListener('click', e => {
   if (e.target === e.currentTarget) fecharConfirmarSair();
 });
-
-carregarLiberacoes();

@@ -162,6 +162,24 @@ header {
 }
 .menu:hover { opacity: .75; }
 
+/* Agrupa "Perfil" + "Sair" num único item do flex de .top-content — precisa
+   ficar junto (não como dois irmãos soltos), senão o justify-content:
+   space-between empurra o botão do meio pro centro do header, por cima da
+   logo/nome "Integra Escolar". Sem margin-top aqui: cada botão .btn-sair-top
+   já tem o seu (definido em porteiro.css/professor.css) — duplicar somaria
+   os dois e desceria os botões demais. */
+.acoes-usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-perfil-top {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.5);
+  color: var(--branco);
+}
+.btn-perfil-top:hover { background: rgba(255,255,255,.12); }
+
 /* ── Dropdown ── */
 .dropdown-menu {
   position: absolute;
@@ -245,4 +263,5 @@ header {
   .dropdown-menu { right: 20px; width: 200px; }
   .logo img { width: 130px; }
   .btn-voltar { top: 20px; left: 16px; width: 36px; height: 36px; font-size: 16px; }
+  .acoes-usuario { gap: 8px; }
 }

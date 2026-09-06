@@ -35,6 +35,11 @@
             <i class="fa-solid fa-clock-rotate-left"></i>
             <span>Histórico</span>
         </a>
+
+        <a href="#" class="quick-item" data-panel="configuracoes" onclick="irPainel('configuracoes',this); return false;">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Perfil</span>
+        </a>
     </nav>
   </header>
 
@@ -201,6 +206,11 @@
       <!-- Painel 2: Histórico (todas as ocorrências da escola, isolado em iframe) -->
       <section class="slide-panel" data-panel="historico-gestao">
         <iframe class="panel-iframe" id="frameHistorico" src="historico-gestao.html" title="Histórico"></iframe>
+      </section>
+
+      <!-- Painel 3: Perfil (mesma tela/rota já usada por Responsável/Professor/Porteiro) -->
+      <section class="slide-panel" data-panel="configuracoes">
+        <iframe class="panel-iframe" id="frameConfiguracoes" title="Perfil"></iframe>
       </section>
 
     </div>

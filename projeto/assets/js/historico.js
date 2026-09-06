@@ -15,6 +15,12 @@
     }
   });
 
+  // Atualização automática (Prioridade 1): reaproveita carregarHistorico(),
+  // que já preserva os filtros de data/status (eles são lidos de novo em
+  // render(), nunca são limpos). Só executa depois que USUARIO/API_BASE
+  // chegarem pelo postMessage — carregarHistorico() já se protege disso.
+  iniciarAtualizacaoAutomatica(carregarHistorico);
+
   // Se a página pai ainda não tiver enviado os dados (ex.: iframe recarregado
   // isoladamente), pede explicitamente.
   if (window.parent && window.parent !== window) {

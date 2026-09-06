@@ -3,6 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from mysql.connector import IntegrityError
 from db import fetch_one, get_connection, execute
 from auth_utils import gerar_token, login_obrigatorio
+from validadores import nome_valido, MENSAGEM_NOME_INVALIDO
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -83,6 +84,8 @@ def cadastro_responsavel():
 
     if not all((nome, cpf, telefone, email, senha, matricula)):
         return jsonify({'erro': 'Preencha todos os campos obrigatórios.'}), 400
+    if not nome_valido(nome):
+        return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if not matricula.isdigit() or not 6 <= len(matricula) <= 12:
         return jsonify({'erro': 'A matrícula deve conter entre 6 e 12 dígitos.'}), 400
     if len(cpf) != 11:
@@ -174,13 +177,13 @@ def _buscar_pessoa_logada(id_usuario, perfil):
 
 def _buscar_perfil_completo(id_usuario, perfil):
     pessoa = _buscar_pessoa_logada(id_usuario, perfil)
-    usuario = fetch_one('SELECT id_usuario, email, telefone, ativo FROM Usuario WHERE id_usuario = %s', (id_usuario,))
+    usuario = fetch_one('SELECT id_usuario, email, telefone, ativo, foto_perfil FROM Usuario WHERE id_usuario = %s', (id_usuario,))
     if not usuario or not pessoa:
         return None
     return {'id_usuario': usuario['id_usuario'], 'email': usuario['email'],
             'telefone': usuario.get('telefone') or '', 'ativo': bool(usuario.get('ativo', True)),
             'nivel_acesso': g.usuario.get('nivel_acesso'), 'perfil': perfil,
-            'pessoa': pessoa}
+            'pessoa': pessoa, 'foto_perfil': usuario.get('foto_perfil')}
 
 
 @auth_bp.route('/perfil', methods=['GET'])
@@ -200,12 +203,21 @@ def atualizar_perfil():
     nome = str(dados.get('nome') or '').strip()
     email_novo = str(dados.get('email') or '').strip().lower()
     telefone = ''.join(filter(str.isdigit, str(dados.get('telefone') or '')))
+    tem_foto = 'foto_perfil' in dados
+    foto_perfil = dados.get('foto_perfil')
     if not nome:
         return jsonify({'erro': 'Informe o nome completo.'}), 400
+    if not nome_valido(nome):
+        return jsonify({'erro': MENSAGEM_NOME_INVALIDO}), 400
     if not email_novo or '@' not in email_novo:
         return jsonify({'erro': 'Informe um email valido.'}), 400
     if len(telefone) not in (10, 11):
         return jsonify({'erro': 'Informe um telefone valido com DDD.'}), 400
+    if tem_foto and foto_perfil is not None:
+        if not isinstance(foto_perfil, str) or not foto_perfil.startswith('data:image/'):
+            return jsonify({'erro': 'Foto de perfil invalida.'}), 400
+        if len(foto_perfil) > 800_000:
+            return jsonify({'erro': 'A foto ficou muito grande. Escolha outra imagem.'}), 400
 
     id_usuario = g.usuario['id_usuario']
     perfil = g.usuario.get('perfil')
@@ -219,7 +231,10 @@ def atualizar_perfil():
     tabela, coluna_id = PERFIS_TABELAS[perfil]
     conn = get_connection(); cur = conn.cursor()
     try:
-        cur.execute('UPDATE Usuario SET email = %s, telefone = %s WHERE id_usuario = %s', (email_novo, telefone, id_usuario))
+        if not tem_foto:
+            cur.execute('UPDATE Usuario SET email = %s, telefone = %s WHERE id_usuario = %s', (email_novo, telefone, id_usuario))
+        else:
+            cur.execute('UPDATE Usuario SET email = %s, telefone = %s, foto_perfil = %s WHERE id_usuario = %s', (email_novo, telefone, foto_perfil, id_usuario))
         cur.execute(f'UPDATE {tabela} SET nome = %s WHERE {coluna_id} = %s', (nome, pessoa['id']))
         if perfil == 'responsavel':
             cur.execute('UPDATE Responsavel SET telefone = %s WHERE id_responsavel = %s', (telefone, pessoa['id']))

@@ -264,6 +264,47 @@ def decidir_ocorrencia(id_ocorrencia):
     return jsonify({'mensagem': 'Solicitação rejeitada.'})
 
 
+@ocorrencias_bp.route('/<int:id_ocorrencia>/desfazer', methods=['PUT'])
+@papel_obrigatorio('gestao', 'administrador')
+def desfazer_decisao(id_ocorrencia):
+    """Permite à Gestão desfazer uma aprovação/rejeição por engano e devolver
+    a solicitação para a fila de pendentes. Nunca desfaz uma ação física já
+    tomada por outro perfil: se o porteiro já confirmou a saída do aluno
+    (Liberação), ou se algum professor já respondeu à falta gerada por um
+    Atestado aprovado, o desfazer é bloqueado em vez de apagar esse rastro."""
+    ocorrencia = fetch_one(
+        'SELECT categoria, registrado, motivo_rejeicao, saida_confirmada FROM Ocorrencia WHERE id_ocorrencia = %s',
+        (id_ocorrencia,)
+    )
+    if not ocorrencia:
+        return jsonify({'erro': 'Ocorrência não encontrada.'}), 404
+    if ocorrencia['categoria'] not in ('Atestado', 'Liberacao'):
+        return jsonify({'erro': 'Esta ocorrência não é analisada pela gestão.'}), 403
+
+    ja_decidida = ocorrencia['registrado'] or ocorrencia['motivo_rejeicao'] is not None
+    if not ja_decidida:
+        return jsonify({'erro': 'Esta solicitação ainda está pendente; não há decisão para desfazer.'}), 409
+
+    if ocorrencia['categoria'] == 'Liberacao' and ocorrencia['saida_confirmada']:
+        return jsonify({'erro': 'Não é possível desfazer: o porteiro já confirmou a saída do aluno com base nesta liberação.'}), 409
+
+    if ocorrencia['categoria'] == 'Atestado' and ocorrencia['registrado']:
+        pendencia_respondida = fetch_one('''
+            SELECT id_ocorrencia_aula FROM Ocorrencia_Aula
+            WHERE id_ocorrencia = %s AND status_professor <> 'Pendente' LIMIT 1
+        ''', (id_ocorrencia,))
+        if pendencia_respondida:
+            return jsonify({'erro': 'Não é possível desfazer: pelo menos um professor já respondeu à falta gerada por este atestado.'}), 409
+        execute('DELETE FROM Ocorrencia_Aula WHERE id_ocorrencia = %s', (id_ocorrencia,))
+
+    execute('''
+        UPDATE Ocorrencia
+        SET registrado = FALSE, motivo_rejeicao = NULL, resposta_gestao = NULL, id_usuario_aprovador = NULL
+        WHERE id_ocorrencia = %s
+    ''', (id_ocorrencia,))
+    return jsonify({'mensagem': 'Decisão desfeita. A solicitação voltou para a fila de pendentes.'})
+
+
 @ocorrencias_bp.route('/professor/pendencias', methods=['GET'])
 @papel_obrigatorio('professor')
 def pendencias_professor():

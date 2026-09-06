@@ -181,3 +181,10 @@ document.getElementById('modalConfirmarSair').addEventListener('click', e => {
 });
 
 carregarLiberacoes();
+
+// Atualização automática (Prioridade 1): reaproveita a mesma carregarLiberacoes()
+// usada no carregamento inicial e ao confirmar uma saída. Pausa enquanto o
+// porteiro está com o modal de confirmação aberto.
+iniciarAtualizacaoAutomatica(carregarLiberacoes, {
+  podeAtualizar: () => !document.getElementById('modalConfirmar').classList.contains('show')
+});

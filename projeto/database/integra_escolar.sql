@@ -29,6 +29,7 @@ CREATE TABLE Usuario (
     nivel_acesso      TINYINT NOT NULL,
     ativo             BOOLEAN NOT NULL DEFAULT TRUE,
     email_verificado  BOOLEAN NOT NULL DEFAULT FALSE,
+    foto_perfil       MEDIUMTEXT NULL DEFAULT NULL,
     criado_em         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id_usuario),

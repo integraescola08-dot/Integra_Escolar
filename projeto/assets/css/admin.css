@@ -14,6 +14,25 @@ header {
 }
 header .titulo { display: flex; gap: 14px; align-items: baseline; }
 header .titulo span { opacity: .85; font-size: 14px; }
+/* Agrupa "Perfil" + "Sair" — precisam ficar juntos num único filho do
+   header (que é flex + space-between), senão o botão do meio flutua solto
+   no centro do header em vez de ficar junto do "Sair" à direita. */
+.acoes-topo { display: flex; align-items: center; gap: 10px; }
+.btn-perfil-topo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  background: rgba(255,255,255,.15);
+  color: var(--branco);
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: .2s;
+}
+.btn-perfil-topo:hover { background: rgba(255,255,255,.25); }
 header button {
   background: var(--branco);
   color: var(--azul-principal);
@@ -123,6 +142,7 @@ form button:hover { filter: brightness(1.06); }
   font-size: 14px;
 }
 .linha span { flex: 1 1 140px; }
+.linha-grade-unificada.linha-cabecalho { background: var(--azul-principal, #1a56a0); color: #fff; font-weight: 600; }
 .vazio { color: var(--texto-secundario); padding: 12px 0; }
 
 .btn-excluir {
@@ -178,64 +198,6 @@ form button:hover { filter: brightness(1.06); }
   min-height: 44px;
   padding: 8px;
 }
-
-/* Formulário de cadastro de turma: campos preenchíveis em cima,
-   ações (baixar modelo / cadastrar) separadas embaixo por uma
-   linha divisória, para não competirem em destaque visual. */
-#form-turma.form-turma {
-  grid-template-columns: 1fr 1fr;
-  align-items: start;
-}
-.campo-turma {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--texto-secundario);
-  font-size: 13px;
-}
-.form-turma-rodape {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 6px;
-  padding-top: 16px;
-  border-top: 1px solid var(--borda);
-}
-.link-modelo-grade {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--azul-principal);
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-}
-.link-modelo-grade:hover { text-decoration: underline; }
-.form-turma-rodape button {
-  min-width: 260px;
-}
-@media (max-width: 650px) {
-  #form-turma.form-turma { grid-template-columns: 1fr; }
-  .form-turma-rodape { flex-direction: column; align-items: stretch; }
-  .link-modelo-grade { justify-content: center; }
-  .form-turma-rodape button { min-width: 0; }
-}
-
-.aviso-importacao {
-  background: #FFF7E6;
-  border: 1px solid #F0C36D;
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-bottom: 22px;
-  font-size: 13px;
-  color: var(--texto-secundario);
-}
-.aviso-importacao p { font-weight: 700; margin-bottom: 6px; color: inherit; }
-.aviso-importacao ul { margin: 0; padding-left: 18px; max-height: 180px; overflow-y: auto; }
-.aviso-importacao li { margin-bottom: 3px; }
-.aviso-importacao.aviso-sucesso { background: #E9F7EF; border-color: #8FD9AE; }
-.aviso-importacao code { background: rgba(0,0,0,.08); padding: 1px 6px; border-radius: 4px; }
 
 /* Ajustes de usabilidade do painel administrativo */
 .cards article {
@@ -337,9 +299,6 @@ form button:disabled {
 }
 
 .btn-editar { background: var(--azul-claro); color: var(--azul-escuro); border: 1px solid var(--azul-principal); border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
-.btn-resetar-senha { background: var(--ambar-claro); color: var(--ambar); border: 1px solid var(--ambar); border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
-.btn-resetar-senha:hover { filter: brightness(.96); }
-.btn-resetar-senha:disabled { opacity: .55; cursor: wait; }
 .modal-edicao[hidden] { display: none; }
 .modal-edicao { position: fixed; inset: 0; z-index: 1000; background: rgba(10,25,45,.45); display: grid; place-items: center; padding: 20px; }
 .modal-conteudo { width: min(620px, 100%); background: var(--branco); border-radius: 16px; padding: 22px; box-shadow: 0 20px 60px rgba(0,0,0,.22); }
@@ -434,5 +393,9 @@ form button:disabled {
 .btn-aprovar-admin { background:var(--verde); color:var(--branco); border:1px solid var(--verde); }
 .btn-rejeitar-admin { background:transparent; color:var(--vermelho); border:1px solid var(--vermelho); }
 @media(max-width:800px){ .controle-resumo{grid-template-columns:repeat(2,1fr)} .controle-cabecalho{flex-direction:column} .filtros-controle{flex-wrap:wrap} }
+
+.resumo-importar .controle-resumo { grid-template-columns: repeat(4, 1fr); }
+.lista-erros-importar { max-height: 220px; overflow-y: auto; border: 1px solid var(--borda); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; }
+.lista-erros-importar p { margin: 4px 0; color: var(--vermelho, #b91c1c); }
 
 .btn-ver-anexo-admin { background:var(--azul-claro); color:var(--azul-escuro); border:1px solid var(--azul-principal); border-radius:8px; padding:7px 11px; font-size:12px; font-weight:700; cursor:pointer; }

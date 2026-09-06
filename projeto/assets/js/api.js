@@ -56,6 +56,50 @@ async function apiFetch(url, opcoes = {}) {
   return resposta;
 }
 
+// Atualização automática por polling (reaproveitada por gestao.js, admin.js,
+// porteiro.js, professor.js e historico.js). Chama periodicamente a MESMA
+// função de carregamento que a tela já usa — nunca faz location.reload(),
+// então filtros, formulários abertos e a posição da tela não se perdem.
+// - funcaoAtualizar: função (pode ser async) que já existe na tela e sabe
+//   redesenhar só a área de dados necessária.
+// - opcoes.intervalo: intervalo em ms (padrão 10000 = 10s, como pedido).
+// - opcoes.podeAtualizar: função que retorna false para pular um ciclo
+//   (ex.: enquanto um modal de edição está aberto).
+function iniciarAtualizacaoAutomatica(funcaoAtualizar, opcoes = {}) {
+  const intervalo = opcoes.intervalo || 10000;
+  const podeAtualizar = opcoes.podeAtualizar || (() => true);
+
+  const executar = async () => {
+    // Aba em segundo plano: não gasta requisição à toa.
+    if (document.hidden) return;
+    if (!podeAtualizar()) return;
+    try {
+      await funcaoAtualizar();
+    } catch (erro) {
+      // Atualização automática nunca deve interromper o uso da tela;
+      // só registra no console para depuração.
+      console.error('Atualização automática falhou:', erro);
+    }
+  };
+
+  const idIntervalo = setInterval(executar, intervalo);
+  // Se o usuário volta pra aba depois de um tempo fora, atualiza na hora
+  // em vez de esperar o próximo ciclo do setInterval.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) executar();
+  });
+  return idIntervalo;
+}
+
+// Validação de nome compartilhada entre cadastro.js e admin.js. Espelha a
+// mesma regra do backend (validadores.py::nome_valido): nome e sobrenome,
+// só letras (com acentos comuns do português), espaço, hífen e apóstrofo.
+const NOME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['-][A-Za-zÀ-ÖØ-öø-ÿ]+)*(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+(?:['-][A-Za-zÀ-ÖØ-öø-ÿ]+)*)+$/;
+function nomeValido(valor) {
+  const nome = String(valor || '').trim();
+  return nome.length >= 3 && nome.length <= 150 && NOME_REGEX.test(nome);
+}
+
 function formatarDataBR(dataIso) {
   if (!dataIso) return '';
   const [ano, mes, dia] = String(dataIso).slice(0, 10).split('-');

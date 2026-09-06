@@ -24,7 +24,16 @@ ASSETS_DIR = BASE_DIR / 'assets'
 app = Flask(__name__, static_folder=str(ASSETS_DIR), static_url_path='/assets')
 app.config['UPLOAD_FOLDER'] = str(BASE_DIR / 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
-CORS(app)
+
+# Em desenvolvimento, sem CORS_ORIGINS configurada, libera geral (comportamento
+# atual, preservado). Em produção, defina CORS_ORIGINS no .env com a(s)
+# origem(ns) real(is) do domínio publicado, separadas por vírgula — por
+# exemplo: CORS_ORIGINS=https://integraescolar.com.br
+_origens_cors = os.getenv('CORS_ORIGINS', '').strip()
+if _origens_cors:
+    CORS(app, origins=[o.strip() for o in _origens_cors.split(',') if o.strip()])
+else:
+    CORS(app)
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(alunos_bp, url_prefix='/api/alunos')
@@ -58,19 +67,14 @@ def pages(filename):
     return send_from_directory(PAGES_DIR, filename)
 
 
-@app.route('/modelos/modelo_grade_horarios.xlsx')
-def modelo_grade_horarios():
-    return send_from_directory(BASE_DIR / 'modelos', 'modelo_grade_horarios.xlsx', as_attachment=True, download_name='modelo_grade_horarios.xlsx')
-
-
-@app.route('/modelos/modelo_alunos.xlsx')
-def modelo_alunos():
-    return send_from_directory(BASE_DIR / 'modelos', 'modelo_alunos.xlsx', as_attachment=True, download_name='modelo_alunos.xlsx')
-
-
-@app.route('/modelos/modelo_importacao_completa.xlsx')
-def modelo_importacao_completa():
-    return send_from_directory(BASE_DIR / 'modelos', 'modelo_importacao_completa.xlsx', as_attachment=True, download_name='modelo_importacao_completa.xlsx')
+@app.route('/modelos/<path:nome_arquivo>')
+def modelo_planilha(nome_arquivo):
+    # Só serve os modelos de planilha (import de grade/disciplinas/professores/
+    # alunos); send_from_directory já impede path traversal, e o filtro de nome
+    # evita servir qualquer outro arquivo que caia nessa pasta por engano.
+    if not (nome_arquivo.startswith('modelo_') and nome_arquivo.endswith('.xlsx')):
+        abort(404)
+    return send_from_directory(BASE_DIR / 'modelos', nome_arquivo, as_attachment=True, download_name=nome_arquivo)
 
 
 @app.route('/uploads/<path:filename>')

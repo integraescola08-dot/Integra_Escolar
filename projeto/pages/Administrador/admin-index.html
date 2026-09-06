@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Integra Escolar | Administração</title>
-  <link rel="icon" type="image/png" href="../../assets/img/Logo casinha- endereço.png">
+  <link rel="icon" type="image/png" href="../assets/img/Logo casinha- endereço.png">
   <link rel="stylesheet" href="../../assets/css/paleta.css">
   <link rel="stylesheet" href="../../assets/css/admin.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
 <body>
 
@@ -16,7 +15,10 @@
     <strong>Integra Escolar</strong>
     <span>Administração</span>
   </div>
-  <button id="logout">Sair</button>
+  <div class="acoes-topo">
+    <a href="configuracoes.html" class="btn-perfil-topo"><i class="fa-solid fa-user-gear"></i>&nbsp;Perfil</a>
+    <button id="logout">Sair</button>
+  </div>
 </header>
 
 <main>
@@ -26,7 +28,6 @@
   </section>
 
   <section class="cards">
-    <article><b id="n-materias">0</b><span>Disciplinas</span></article>
     <article><b id="n-alunos">0</b><span>Alunos</span></article>
     <article><b id="n-professores">0</b><span>Professores</span></article>
     <article><b id="n-coordenadores">0</b><span>Coordenadores</span></article>
@@ -39,19 +40,22 @@
     <button data-tab="professores">Professores</button>
     <button data-tab="turmas">Turmas</button>
     <button data-tab="alunos">Alunos</button>
-    <button data-tab="importacao-completa">Importação completa</button>
-    <button data-tab="grade-geral">Grade geral</button>
+    <button data-tab="responsaveis">Responsáveis</button>
+    <button data-tab="horarios">Horários</button>
     <button data-tab="coordenadores">Coordenadores</button>
     <button data-tab="porteiros">Porteiros</button>
-    <button data-tab="responsaveis">Responsáveis</button>
     <button data-tab="controle">Atestados e liberações</button>
   </nav>
 
   <section id="disciplinas" class="painel ativo">
-    <h2>Disciplinas</h2>
-    <p class="ajuda-form">As disciplinas são identificadas automaticamente ao importar a grade de horários de uma turma — não é preciso cadastrá-las manualmente aqui. Esta aba é só para consulta.</p>
-    <div class="filtros-lista">
-      <input type="search" id="busca-materias" placeholder="Buscar disciplina...">
+    <h2>Cadastrar disciplina</h2>
+    <form id="form-materia">
+      <input name="nome" placeholder="Nome da disciplina" maxlength="100" required>
+      <button>Cadastrar</button>
+    </form>
+    <div class="modelo-grade">
+      <a href="/modelos/modelo_disciplinas.xlsx" class="btn-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+      <button type="button" id="abrir-importar-disciplinas" class="btn-modelo-grade" style="border:none;cursor:pointer" data-abrir-importar="disciplinas"><i class="fa-solid fa-file-import"></i> Importar planilha (.csv/.xlsx)</button>
     </div>
     <div id="lista-materias" class="lista"></div>
   </section>
@@ -59,73 +63,31 @@
   <section id="turmas" class="painel">
     <h2>Cadastrar turma</h2>
     <p class="ajuda-form">Cadastre o código da turma e importe a grade no modelo .xlsx. As matérias serão identificadas automaticamente; intervalos, almoço e saída não viram aulas.</p>
-    <form id="form-turma" class="form-turma" enctype="multipart/form-data">
-      <label class="campo-turma">
-        <span>Código da turma</span>
-        <input name="codigo" placeholder="Ex: 2MKA" maxlength="10" required>
-      </label>
-      <label class="campo-turma">
+    <form id="form-turma" enctype="multipart/form-data">
+      <input name="codigo" placeholder="Código: 2MKA" maxlength="10" required>
+      <label class="arquivo-grade">
         <span>Planilha de horários (.xlsx)</span>
         <input name="planilha" type="file" accept=".xlsx" required>
       </label>
-      <div class="form-turma-rodape campo-largo">
-        <a href="/modelos/modelo_grade_horarios.xlsx" class="link-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
-        <button>Cadastrar turma e importar grade</button>
+      <div class="modelo-grade">
+        <a href="/modelos/modelo_grade_horarios.xlsx" class="btn-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+        <small>Use este modelo para evitar erros na importação da grade.</small>
       </div>
+      <button>Cadastrar turma e importar grade</button>
     </form>
     <div id="lista-turmas" class="lista"></div>
-  </section>
-
-  <section id="grade-geral" class="painel">
-    <h2>Grade geral da escola</h2>
-    <p class="ajuda-form">Todas as turmas, horários, matérias e professores vigentes hoje, numa tabela só. Grades históricas ou ainda não iniciadas não aparecem aqui — use "Visualizar grade" dentro de Turmas para ver o histórico de uma turma específica.</p>
-    <div class="filtros-lista">
-      <select id="filtro-turma-grade-geral">
-        <option value="">Todas as turmas</option>
-      </select>
-      <select id="filtro-dia-grade-geral">
-        <option value="">Todos os dias</option>
-        <option value="Segunda">Segunda</option>
-        <option value="Terca">Terça</option>
-        <option value="Quarta">Quarta</option>
-        <option value="Quinta">Quinta</option>
-        <option value="Sexta">Sexta</option>
-        <option value="Sabado">Sábado</option>
-        <option value="Domingo">Domingo</option>
-      </select>
-    </div>
-    <div class="tabela-grade-wrap">
-      <table class="tabela-grade">
-        <thead><tr><th>Turma</th><th>Dia</th><th>Horário</th><th>Matéria</th><th>Professor</th></tr></thead>
-        <tbody id="corpo-grade-geral"></tbody>
-      </table>
-    </div>
   </section>
 
   <section id="alunos" class="painel">
     <h2>Cadastrar aluno</h2>
     <form id="form-aluno">
       <input name="matricula" placeholder="Matrícula (6 a 12 dígitos)" inputmode="numeric" minlength="6" maxlength="12" pattern="[0-9]{6,12}" required>
-      <input name="nome" placeholder="Nome completo" required>
+      <input name="nome" placeholder="Nome completo" maxlength="150" required>
       <select name="turma" required>
         <option value="">Selecione a turma</option>
       </select>
       <button>Cadastrar</button>
     </form>
-
-    <h2>Importar vários alunos por planilha</h2>
-    <p class="ajuda-form">Use esta opção para cadastrar uma turma inteira de uma vez. A turma informada em cada linha já precisa estar cadastrada.</p>
-    <form id="form-importar-alunos" class="form-turma" enctype="multipart/form-data">
-      <label class="campo-turma campo-largo">
-        <span>Planilha de alunos (.xlsx)</span>
-        <input name="planilha" type="file" accept=".xlsx" required>
-      </label>
-      <div class="form-turma-rodape campo-largo">
-        <a href="/modelos/modelo_alunos.xlsx" class="link-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
-        <button>Importar alunos</button>
-      </div>
-    </form>
-    <div id="resultado-importacao-alunos"></div>
 
     <div class="filtros-lista">
       <input type="search" id="busca-alunos" placeholder="Buscar por nome ou matrícula...">
@@ -133,36 +95,17 @@
         <option value="">Todas as turmas</option>
       </select>
     </div>
+    <div class="modelo-grade">
+      <a href="/modelos/modelo_alunos.xlsx" class="btn-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+      <button type="button" class="btn-modelo-grade" style="border:none;cursor:pointer" data-abrir-importar="alunos"><i class="fa-solid fa-file-import"></i> Importar planilha (.csv/.xlsx)</button>
+    </div>
     <div id="lista-alunos" class="lista"></div>
   </section>
 
-  <section id="importacao-completa" class="painel">
-    <h2>Importação completa (Turma + Aluno + Responsável)</h2>
-    <p class="ajuda-form">
-      Use esta opção para cadastrar tudo de uma vez a partir de uma planilha: a turma é criada
-      automaticamente se ainda não existir (só o código — a grade de horários continua sendo
-      importada à parte, na aba Turmas), o aluno é cadastrado e o responsável é criado e vinculado.
-      Se dois alunos forem irmãos, repita os mesmos dados de responsável (mesmo CPF) nas duas
-      linhas — o sistema identifica pelo CPF e não duplica o cadastro. As colunas de responsável
-      podem ficar em branco se o aluno ainda não tiver um cadastrado.
-    </p>
-    <form id="form-importacao-completa" class="form-turma" enctype="multipart/form-data">
-      <label class="campo-turma campo-largo">
-        <span>Planilha de importação completa (.xlsx)</span>
-        <input name="planilha" type="file" accept=".xlsx" required>
-      </label>
-      <div class="form-turma-rodape campo-largo">
-        <a href="/modelos/modelo_importacao_completa.xlsx" class="link-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
-        <button>Importar tudo</button>
-      </div>
-    </form>
-    <div id="resultado-importacao-completa"></div>
-  </section>
-
-  <section id="professores" class="painel ativo">
+  <section id="professores" class="painel">
     <h2>Cadastrar professor</h2>
     <form id="form-professor">
-      <input name="nome" placeholder="Nome completo" required>
+      <input name="nome" placeholder="Nome completo" maxlength="150" required>
       <input name="email" type="email" placeholder="Email" required>
       <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
       <select name="id_materias" id="select-materias-professor" class="campo-largo" multiple size="5" required></select>
@@ -170,13 +113,17 @@
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
       <button>Cadastrar</button>
     </form>
+    <div class="modelo-grade">
+      <a href="/modelos/modelo_professores.xlsx" class="btn-modelo-grade" download><i class="fa-solid fa-file-arrow-down"></i> Baixar modelo de planilha</a>
+      <button type="button" class="btn-modelo-grade" style="border:none;cursor:pointer" data-abrir-importar="professores"><i class="fa-solid fa-file-import"></i> Importar planilha (.csv/.xlsx)</button>
+    </div>
     <div id="lista-professores" class="lista"></div>
   </section>
 
   <section id="coordenadores" class="painel">
     <h2>Cadastrar coordenador(a)</h2>
     <form id="form-coordenador">
-      <input name="nome" placeholder="Nome completo" required>
+      <input name="nome" placeholder="Nome completo" maxlength="150" required>
       <input name="email" type="email" placeholder="Email" required>
       <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
@@ -190,7 +137,7 @@
     <h2>Cadastrar responsável</h2>
     <p class="ajuda-form">O administrador pode cadastrar um responsável quando a família não conseguir concluir o cadastro. O responsável é vinculado diretamente à matrícula do aluno.</p>
     <form id="form-responsavel">
-      <input name="nome" placeholder="Nome completo" required>
+      <input name="nome" placeholder="Nome completo" maxlength="150" required>
       <input name="cpf" placeholder="CPF (11 dígitos)" inputmode="numeric" minlength="11" maxlength="11" pattern="[0-9]{11}" required>
       <input name="telefone" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" required>
       <input name="email" type="email" placeholder="Email" required>
@@ -204,13 +151,32 @@
   <section id="porteiros" class="painel">
     <h2>Cadastrar porteiro(a)</h2>
     <form id="form-porteiro">
-      <input name="nome" placeholder="Nome completo" required>
+      <input name="nome" placeholder="Nome completo" maxlength="150" required>
       <input name="email" type="email" placeholder="Email" required>
       <input name="telefone" type="tel" placeholder="Telefone (10 ou 11 dígitos)" inputmode="numeric" minlength="10" maxlength="11" pattern="[0-9]{10,11}" autocomplete="tel">
       <input name="senha" type="password" placeholder="Senha inicial (8+ caracteres)" required>
       <button>Cadastrar</button>
     </form>
     <div id="lista-porteiros" class="lista"></div>
+  </section>
+
+  <section id="horarios" class="painel">
+    <div class="controle-cabecalho"><div><h2>Grade unificada</h2><p class="ajuda-form">Visualize a grade de horários de todas as turmas em um único lugar.</p></div><button type="button" id="atualizar-horarios" class="btn-atualizar-controle">Atualizar</button></div>
+    <div class="filtros-lista">
+      <input type="search" id="busca-grade-unificada" placeholder="Buscar turma, disciplina ou professor...">
+      <select id="filtro-turma-grade-unificada"><option value="">Todas as turmas</option></select>
+      <select id="filtro-dia-grade-unificada">
+        <option value="">Todos os dias</option>
+        <option value="Segunda">Segunda-feira</option>
+        <option value="Terca">Terça-feira</option>
+        <option value="Quarta">Quarta-feira</option>
+        <option value="Quinta">Quinta-feira</option>
+        <option value="Sexta">Sexta-feira</option>
+        <option value="Sabado">Sábado</option>
+        <option value="Domingo">Domingo</option>
+      </select>
+    </div>
+    <div id="tabela-grade-unificada" class="lista"></div>
   </section>
 
   <section id="controle" class="painel">
@@ -236,6 +202,19 @@
     </div>
   </div>
 
+  <div id="modal-senha-responsavel" class="modal-edicao" hidden>
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="titulo-senha-responsavel">
+      <div class="modal-topo"><h2 id="titulo-senha-responsavel">Redefinir senha</h2><button type="button" id="fechar-senha-responsavel" aria-label="Fechar">×</button></div>
+      <p class="ajuda-form campo-largo" id="ajuda-senha-usuario">Só o administrador pode redefinir a senha de outro usuário.</p>
+      <form id="form-senha-responsavel">
+        <input type="password" name="senha_nova" id="campo-senha-nova-responsavel" placeholder="Nova senha (6+ caracteres)" minlength="6" required>
+        <input type="password" name="senha_confirmacao" id="campo-senha-confirmacao-responsavel" placeholder="Confirme a nova senha" minlength="6" required>
+        <button type="button" id="usar-senha-padrao" class="btn-modelo-grade" style="border:none;cursor:pointer;margin:4px 0 12px">Usar senha padrão (Integra@123)</button>
+        <div class="acoes-modal"><button type="button" class="btn-cancelar" id="cancelar-senha-responsavel">Cancelar</button><button type="submit">Salvar nova senha</button></div>
+      </form>
+    </div>
+  </div>
+
   <div id="modal-nova-grade" class="modal-edicao" hidden>
     <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="titulo-nova-grade">
       <div class="modal-topo"><h2 id="titulo-nova-grade">Nova grade</h2><button type="button" id="fechar-nova-grade" aria-label="Fechar">×</button></div>
@@ -245,6 +224,35 @@
         <label class="arquivo-grade"><span>Nova planilha (.xlsx)</span><input name="planilha" type="file" accept=".xlsx" required></label>
         <div class="acoes-modal"><button type="button" id="cancelar-nova-grade" class="btn-cancelar">Cancelar</button><button type="submit">Importar nova grade</button></div>
       </form>
+    </div>
+  </div>
+
+  <div id="modal-importar" class="modal-edicao" hidden>
+    <div class="modal-conteudo" role="dialog" aria-modal="true" aria-labelledby="titulo-importar">
+      <div class="modal-topo"><h2 id="titulo-importar">Importar planilha</h2><button type="button" id="fechar-importar" aria-label="Fechar">×</button></div>
+
+      <form id="form-importar-arquivo" enctype="multipart/form-data">
+        <label class="arquivo-grade campo-largo">
+          <span>Arquivo (.csv ou .xlsx)</span>
+          <input name="arquivo" type="file" accept=".csv,.xlsx" required>
+        </label>
+        <div class="acoes-modal"><button type="button" class="btn-cancelar" id="cancelar-importar">Cancelar</button><button type="submit">Analisar planilha</button></div>
+      </form>
+
+      <div id="resumo-importar" class="resumo-importar" hidden>
+        <div class="controle-resumo">
+          <article><b id="importar-encontrados">0</b><span>Encontrados</span></article>
+          <article><b id="importar-validos">0</b><span>Válidos</span></article>
+          <article><b id="importar-ja-cadastrados">0</b><span>Já cadastrados</span></article>
+          <article><b id="importar-invalidos">0</b><span>Com erro</span></article>
+        </div>
+        <div id="importar-lista-erros" class="lista-erros-importar" hidden></div>
+        <div class="acoes-modal">
+          <button type="button" class="btn-cancelar" id="cancelar-importar-2">Cancelar</button>
+          <button type="button" id="ver-erros-importar" hidden>Ver erros</button>
+          <button type="button" id="confirmar-importar">Importar</button>
+        </div>
+      </div>
     </div>
   </div>
 

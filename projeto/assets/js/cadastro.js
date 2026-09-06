@@ -1,4 +1,5 @@
 const somenteNumeros = (valor) => valor.replace(/\D/g, '');
+// nomeValido(...) vem de assets/js/api.js (compartilhado com admin.js).
 
 const cpfInput = document.getElementById('cpf');
 const telefoneInput = document.getElementById('telefone');
@@ -44,6 +45,11 @@ document.getElementById('cadastroForm').addEventListener('submit', async (evento
 
   if (!/^\d{6,12}$/.test(matriculaInput.value.trim())) {
     alert('A matrícula deve conter entre 6 e 12 dígitos.');
+    return;
+  }
+
+  if (!nomeValido(document.getElementById('nome').value)) {
+    exibirMensagem('Informe seu nome completo (nome e sobrenome, só letras).', 'erro');
     return;
   }
 
