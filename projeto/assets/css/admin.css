@@ -145,6 +145,20 @@ form button:hover { filter: brightness(1.06); }
 .linha-grade-unificada.linha-cabecalho { background: var(--azul-principal, #1a56a0); color: #fff; font-weight: 600; }
 .vazio { color: var(--texto-secundario); padding: 12px 0; }
 
+/* ── Grade unificada estilo planilha (aba Horários) ── */
+.bloco-turma-grade { margin: 0 0 26px; }
+.bloco-turma-grade h3 { margin: 0 0 10px; font-size: 15px; color: var(--azul-principal, #1a56a0); }
+.grade-planilha { min-width: 720px; table-layout: fixed; }
+.grade-planilha th { background: var(--azul-principal, #1a56a0); color: #fff; text-align: center; white-space: nowrap; }
+.grade-planilha th:first-child { width: 110px; }
+.grade-planilha td { vertical-align: top; border-right: 1px solid var(--borda); }
+.grade-planilha td:last-child { border-right: 0; }
+.grade-planilha .hora-cel { background: var(--fundo-pagina); font-weight: 600; text-align: center; white-space: nowrap; }
+.grade-planilha .celula-vazia { text-align: center; color: var(--texto-secundario); }
+.grade-planilha .materia-cel { display: block; font-weight: 600; font-size: 13px; }
+.grade-planilha .professor-cel { display: block; font-size: 12px; color: var(--texto-secundario); margin-top: 2px; }
+.grade-planilha tbody tr:nth-child(even) td:not(.hora-cel) { background: rgba(0,0,0,.015); }
+
 .btn-excluir {
   flex: 0 0 auto;
   margin-left: auto;
@@ -198,6 +212,29 @@ form button:hover { filter: brightness(1.06); }
   min-height: 44px;
   padding: 8px;
 }
+
+/* ── Formulário "Cadastrar turma" (código + planilha + modelo agrupados) ── */
+.campo-codigo-turma {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--texto-secundario);
+  max-width: 240px;
+}
+.campo-planilha-turma {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 18px;
+  background: var(--fundo-pagina);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.campo-planilha-turma .arquivo-grade { flex: 1 1 240px; margin: 0; }
+.campo-planilha-turma .modelo-grade { flex: 1 1 240px; }
+.btn-cadastrar-turma { justify-self: start; }
 
 /* Ajustes de usabilidade do painel administrativo */
 .cards article {

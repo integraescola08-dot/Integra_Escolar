@@ -39,6 +39,83 @@
       --shadow-sm: 0 1px 6px rgba(0,0,0,.07);
     }
 
+/* ── Cabeçalho superior simples (Administrador — mesmo padrão do admin-index.html) ── */
+header.header-config-simples {
+  height: 68px;
+  background: linear-gradient(90deg, var(--sky-400), var(--sky-500));
+  color: var(--branco);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5vw;
+}
+header.header-config-simples .titulo { display: flex; gap: 14px; align-items: baseline; }
+header.header-config-simples .titulo span { opacity: .85; font-size: 14px; }
+header.header-config-simples .acoes-topo { display: flex; align-items: center; gap: 10px; }
+header.header-config-simples button {
+  background: var(--branco);
+  color: var(--sky-500);
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+header.header-config-simples button:hover { filter: brightness(.95); }
+
+/* ── Cabeçalho rico (Professor — mesmo padrão visual de controle-faltas.html) ──
+   Isolado com a classe .header-config-professor pra não colidir com nada do
+   header.css/professor.css (que não são carregados nesta página) nem com o
+   .header-config-simples do Administrador acima. */
+header.header-config-professor {
+  background: var(--sky-500);
+  height: 190px;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0,0,0,.2);
+}
+.header-config-professor .logo { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); }
+.header-config-professor .logo img { width: 130px; height: auto; }
+.header-config-professor .top-content {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--branco);
+}
+.header-config-professor .user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--branco);
+}
+.header-config-professor .acoes-usuario { display: flex; align-items: center; gap: 12px; }
+.header-config-professor .btn-sair-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.25);
+  color: var(--branco);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: .2s;
+  font-family: inherit;
+}
+.header-config-professor .btn-sair-top:hover { background: rgba(255,255,255,.22); }
+@media (max-width: 768px) {
+  header.header-config-professor { height: 150px; }
+  .header-config-professor .logo img { width: 100px; }
+}
+
 .page{
     width: 100%;
     max-width: 950px;
@@ -75,6 +152,10 @@
 .main-header { background: linear-gradient(90deg, var(--sky-400), var(--sky-500)); padding: 40px; }
 .main-header h2 { font-size: 2rem; font-weight: 600; color: var(--branco); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
 .main-header h2 svg { width: 26px; height: 26px; fill: none; stroke: var(--branco); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.btn-back-main { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; margin-bottom: 14px; background: rgba(255,255,255,.15); border-radius: 50%; color: var(--branco); text-decoration: none; transition: background .15s, transform .15s; }
+.btn-back-main:hover { background: rgba(255,255,255,.28); transform: translateX(-2px); }
+.btn-back-main svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
     .user-card { background: rgba(255,255,255,.18); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 14px; }
     .user-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--sky-400), var(--sky-600)); border: 2px solid rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: var(--branco); flex-shrink: 0; overflow: hidden; }

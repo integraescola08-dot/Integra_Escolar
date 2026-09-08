@@ -10,14 +10,23 @@
   <link rel="stylesheet" href="../../assets/css/configuracoes-gerais.css">
 </head>
 <body>
+<header class="header-config-simples">
+  <div class="titulo">
+    <strong>Integra Escolar</strong>
+    <span>Administração</span>
+  </div>
+  <div class="acoes-topo">
+    <button onclick="sairDaConta()">Sair</button>
+  </div>
+</header>
 <div class="page">
   <div class="card">
 
     <!-- ══ TELA PRINCIPAL ══ -->
     <div id="screen-main" class="screen active">
       <div class="main-header">
-        <a href="admin-index.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--azul-principal,#1a56a0);text-decoration:none;font-size:14px;font-weight:600;margin-bottom:10px">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Voltar
+        <a href="admin-index.html" class="btn-back-main" aria-label="Voltar" title="Voltar">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         </a>
         <h2>
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>

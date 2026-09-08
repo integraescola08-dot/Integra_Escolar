@@ -300,13 +300,59 @@ $$('.tabs button').forEach(botao => {
 });
 
 const DIA_ROTULO = { Segunda: 'Segunda-feira', Terca: 'Terça-feira', Quarta: 'Quarta-feira', Quinta: 'Quinta-feira', Sexta: 'Sexta-feira', Sabado: 'Sábado', Domingo: 'Domingo' };
+const ORDEM_DIAS_SEMANA = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
+
+// Monta uma grade estilo planilha (horários nas linhas, dias nas colunas) para
+// as aulas de UMA turma. Reaproveita o mesmo modelo visual da planilha que a
+// escola importa (routes/admin.py::extrair_grade_planilha).
+function montarGradePlanilha(aulasTurma) {
+  const diasPresentes = ORDEM_DIAS_SEMANA.filter(dia => aulasTurma.some(a => a.dia_da_semana === dia));
+  if (!diasPresentes.length) return '<p class="vazio">Nenhum horário encontrado.</p>';
+
+  const slots = new Map();
+  aulasTurma.forEach(a => {
+    const inicio = String(a.hr_inicio || '').slice(0, 5);
+    const fim = String(a.hr_final || '').slice(0, 5);
+    slots.set(`${inicio}|${fim}`, { inicio, fim });
+  });
+  const linhasHorario = [...slots.values()].sort((a, b) => a.inicio.localeCompare(b.inicio));
+
+  const mapaCelulas = new Map();
+  aulasTurma.forEach(a => {
+    const inicio = String(a.hr_inicio || '').slice(0, 5);
+    mapaCelulas.set(`${a.dia_da_semana}|${inicio}`, a);
+  });
+
+  const cabecalho = `<tr><th>Horário</th>${diasPresentes.map(d => `<th>${DIA_ROTULO[d]}</th>`).join('')}</tr>`;
+  const linhas = linhasHorario.map(slot => {
+    const celulas = diasPresentes.map(dia => {
+      const aula = mapaCelulas.get(`${dia}|${slot.inicio}`);
+      if (!aula) return '<td class="celula-vazia">—</td>';
+      return `<td><span class="materia-cel">${escaparHtml(aula.materia)}</span><span class="professor-cel">${escaparHtml(aula.professor_nome || 'Sem professor')}</span></td>`;
+    }).join('');
+    return `<tr><td class="hora-cel">${escaparHtml(slot.inicio)}–${escaparHtml(slot.fim)}</td>${celulas}</tr>`;
+  }).join('');
+
+  return `<div class="tabela-grade-wrap"><table class="tabela-grade grade-planilha"><thead>${cabecalho}</thead><tbody>${linhas}</tbody></table></div>`;
+}
+
+// Está vigente se hoje está dentro do intervalo [data_inicio_vigencia, data_fim_vigencia].
+// Fim nulo = vigência indeterminada (sempre vigente a partir do início).
+function horarioVigenteHoje(h) {
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const inicio = h.data_inicio_vigencia ? new Date(`${String(h.data_inicio_vigencia).slice(0, 10)}T00:00:00`) : null;
+  const fim = h.data_fim_vigencia ? new Date(`${String(h.data_fim_vigencia).slice(0, 10)}T00:00:00`) : null;
+  if (inicio && hoje < inicio) return false;
+  if (fim && hoje > fim) return false;
+  return true;
+}
 
 function renderGradeUnificada() {
   const termo = normalizarTexto($('#busca-grade-unificada').value.trim());
   const turma = $('#filtro-turma-grade-unificada').value;
   const dia = $('#filtro-dia-grade-unificada').value;
   const lista = (gradeUnificada || []).filter(h => {
-    const okVigente = !h.data_fim_vigencia; // só a grade em vigor hoje, ignora vigências já encerradas
+    const okVigente = horarioVigenteHoje(h); // só a grade em vigor hoje, ignora vigências já encerradas ou futuras
     const okTurma = !turma || h.turma === turma;
     const okDia = !dia || h.dia_da_semana === dia;
     const okBusca = !termo || normalizarTexto(`${h.turma} ${h.materia} ${h.professor_nome || ''}`).includes(termo);
@@ -316,16 +362,11 @@ function renderGradeUnificada() {
     $('#tabela-grade-unificada').innerHTML = '<p class="vazio">Nenhum horário encontrado.</p>';
     return;
   }
-  const linhas = lista.map(h => `<div class="linha linha-grade-unificada">
-    <span><strong>${escaparHtml(h.turma)}</strong></span>
-    <span>${escaparHtml(DIA_ROTULO[h.dia_da_semana] || h.dia_da_semana)}</span>
-    <span>${escaparHtml(String(h.hr_inicio || '').slice(0, 5))} às ${escaparHtml(String(h.hr_final || '').slice(0, 5))}</span>
-    <span>${escaparHtml(h.materia)}</span>
-    <span>${escaparHtml(h.professor_nome || 'Sem professor')}</span>
-  </div>`).join('');
-  $('#tabela-grade-unificada').innerHTML = `<div class="linha linha-grade-unificada linha-cabecalho">
-    <span>Turma</span><span>Dia</span><span>Horário</span><span>Disciplina</span><span>Professor</span>
-  </div>${linhas}`;
+  const turmasEncontradas = [...new Set(lista.map(h => h.turma))].sort();
+  $('#tabela-grade-unificada').innerHTML = turmasEncontradas.map(codigoTurma => {
+    const aulasDaTurma = lista.filter(h => h.turma === codigoTurma);
+    return `<section class="bloco-turma-grade"><h3>Turma ${escaparHtml(codigoTurma)}</h3>${montarGradePlanilha(aulasDaTurma)}</section>`;
+  }).join('');
 }
 
 async function carregarGradeUnificada() {
