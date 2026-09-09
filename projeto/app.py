@@ -93,3 +93,9 @@ def uploaded_file(filename):
 if __name__ == '__main__':
     debug = os.getenv('FLASK_DEBUG', '0') == '1'
     app.run(debug=debug)
+
+# ==========================================
+# Desenvolvido por: Buarque
+# TCC - Sistema Web
+# "Buarque esteve aqui"
+# ==========================================
